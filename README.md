@@ -27,6 +27,7 @@ Nouns: Loiste
 
 ```clj
 [:workbook
+ {:styles {:date {:data-format (loiste/date-format (loiste/locale :fi) "dd.MM.yyyy HH:mm")}}}
  [:sheet {:name "Sheet a"}
   [:columns
    [:column {:style :date}]

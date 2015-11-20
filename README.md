@@ -34,7 +34,7 @@ Nouns: Loiste
    [:column]]
   [:rows
    [:row
-    [:cell #DateTime "..."]
+    [:cell #DateTime "2015-11-20T09:43:00Z"]
     [:cell "foobar"]]]]]
 
 ;; Seq/list splicing

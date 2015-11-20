@@ -15,3 +15,27 @@ Nouns: Loiste
 ---
 
 ## Usage
+
+...
+
+## Ideas
+
+- Streaming worksbooks (`SXSSFWorkbook`)
+- New workbooks & from template
+- Should support lazy seq as data
+- Input as Hiccup style data
+
+```clj
+[:workbook
+ [:sheet {:name "Sheet a"}
+  [:columns
+   [:column {:style :date}]
+   [:column]]
+  [:rows
+   [:row
+    [:cell #DateTime "..."]
+    [:cell "foobar"]]]]]
+
+;; Seq/list splicing
+[:rows (map (fn [i] [:row [:cell i]]) (range 100))]
+```

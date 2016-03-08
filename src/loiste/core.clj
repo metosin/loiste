@@ -76,11 +76,11 @@
 ;;
 
 (def fi-locale (Locale. "fi"))
-(def date-format (DateFormatConverter/convert fi-locale "dd.MM.yyyy HH:mm"))
+(def date-format (DateFormatConverter/convert ^Locale fi-locale "dd.MM.yyyy HH:mm"))
 
 (defn create-styles! [^Workbook wb]
   {:date-style (doto (.createCellStyle wb)
-                 (.setDataFormat (.getFormat (.createDataFormat wb) date-format)))})
+                 (.setDataFormat (.getFormat (.createDataFormat wb) ^String date-format)))})
 
 (defprotocol CellWrite
   (-write [value cell]))
@@ -102,7 +102,7 @@
   (-write [value ^Cell cell]
     (.setCellValue cell (double value)))
   nil
-  (-write [value cell]
+  (-write [value ^Cell cell]
     (.setCellValue cell "")))
 
 (defn write-cell! [^Cell cell value]

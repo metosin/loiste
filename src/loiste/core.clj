@@ -2,42 +2,76 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as s])
   (:import [java.util Locale]
-           [org.apache.poi.ss.usermodel Workbook Sheet Row Cell]
+           [java.awt Color]
+           [org.apache.poi.ss.usermodel Workbook Sheet Row Cell CellStyle FillPatternType]
            [org.apache.poi.ss.util DateFormatConverter]
-           [org.apache.poi.xssf.usermodel XSSFWorkbook XSSFDataFormat]
+           [org.apache.poi.xssf.usermodel XSSFWorkbook XSSFDataFormat XSSFFont
+            XSSFColor]
            [org.apache.poi.xssf.streaming SXSSFWorkbook]))
 
 (set! *warn-on-reflection* true)
 
-(defn blank-cells? [row]
-  (every? (fn [cell] (and (string? cell) (s/blank? cell))) (vals row)))
+(defprotocol ToWorkbook
+  (-to-workbook [this] "Reads object to Workbook"))
 
-(defn strip-blank-rows [rows]
-  (filter (complement blank-cells?) rows))
-
-(defn load-excel [^java.io.InputStream in]
-    (doto (XSSFWorkbook. in)
+(extend-protocol ToWorkbook
+  Workbook
+  (-to-workbook [this]
+    this)
+  java.io.File
+  (-to-workbook [this]
+    (doto (XSSFWorkbook. this)
       (.setMissingCellPolicy Row/RETURN_BLANK_AS_NULL)))
+  java.io.InputStream
+  (-to-workbook [this]
+    (doto (XSSFWorkbook. this)
+      (.setMissingCellPolicy Row/RETURN_BLANK_AS_NULL)))
+  java.net.URL
+  (-to-workbook [this]
+    (doto (XSSFWorkbook. (io/input-stream this))
+      (.setMissingCellPolicy Row/RETURN_BLANK_AS_NULL))))
 
-(defn load-excel-resource [resource]
-  (->> resource
-       (io/resource)
-       (io/input-stream)
-       (load-excel)))
+(defn workbook
+  "Creates a new workbook or opens existing workbook.
+
+  Input can be File, InputStream, URL or Workbook."
+  ([]
+   (XSSFWorkbook.))
+  ([input]
+   (-to-workbook input)))
 
 (defn streaming-workbook
-  ([^Workbook template] (streaming-workbook template nil))
-  ([^Workbook template
+  "Creates a new streaming workbook or opens existing workbook
+  in streaming mode.
+
+  Input can be File, InputStream, URL or Workbook."
+  ([]
+   (SXSSFWorkbook.))
+  ([input]
+   (streaming-workbook input nil))
+  ([input
     {:keys [row-access-window compress-tmp-files? shared-strings-table?]
      :or {row-access-window 100
           compress-tmp-files? false
           shared-strings-table? false}}]
-   (SXSSFWorkbook. template row-access-window compress-tmp-files? shared-strings-table?)))
+   (SXSSFWorkbook. (-to-workbook input) row-access-window compress-tmp-files? shared-strings-table?)))
 
-(defn sheet ^org.apache.poi.ss.usermodel.Sheet [sheet ^Workbook wb]
-  (cond
-    (string? sheet) (.getSheet wb ^String sheet)
-    (number? sheet) (.getSheetAt wb (int sheet))))
+(defn sheet
+  "Returns sheet with given name or index, or creates new sheet with
+  given name if one doesn't exist."
+  ([^Workbook wb]
+   (.createSheet wb))
+  ([^Workbook wb sheet-name-or-index]
+   (or (cond
+         (string? sheet-name-or-index) (.getSheet wb ^String sheet-name-or-index)
+         (number? sheet-name-or-index) (.getSheetAt wb (int sheet-name-or-index)))
+       (if (string? sheet-name-or-index)
+         (.createSheet wb ^String sheet-name-or-index)
+         (.createSheet wb)))))
+
+;;
+;; Reading
+;;
 
 (defn rows [^Sheet sheet]
   (seq sheet))
@@ -49,6 +83,7 @@
 
 (defn cell-value [^Cell cell]
   (if cell
+    ; FIXME: Why doesn't case work here?
     (condp = (.getCellType cell)
       Cell/CELL_TYPE_STRING   (.getStringCellValue cell)
       Cell/CELL_TYPE_NUMERIC  (.getNumericCellValue cell)
@@ -63,7 +98,13 @@
   ([specs transform ^Row row]
     (reduce parse-row-spec {} (map vector (->> row cells (map (comp transform cell-value))) specs))))
 
-(defn as-longs [x] (if (instance? Double x) (long x) x))
+(defn blank-cells? [row]
+  (every? (fn [cell] (and (string? cell) (s/blank? cell))) (vals row)))
+
+(defn strip-blank-rows [rows]
+  (filter (complement blank-cells?) rows))
+
+; (defn as-longs [x] (if (instance? Double x) (long x) x))
 
 (defn sheet->map [spec sheet]
   (->> sheet
@@ -75,68 +116,106 @@
 ;; Write to excel
 ;;
 
-(def fi-locale (Locale. "fi"))
-(def date-format (DateFormatConverter/convert ^Locale fi-locale "dd.MM.yyyy HH:mm"))
-
-(defn create-styles! [^Workbook wb]
-  {:date-style (doto (.createCellStyle wb)
-                 (.setDataFormat (.getFormat (.createDataFormat wb) ^String date-format)))})
-
 (defprotocol CellWrite
-  (-write [value cell]))
+  (-write [value cell options]))
 
 (extend-protocol CellWrite
   java.lang.String
-  (-write [value ^Cell cell]
+  (-write [value ^Cell cell options]
     (.setCellValue cell value))
   java.lang.Double
-  (-write [value ^Cell cell]
+  (-write [value ^Cell cell options]
     (.setCellValue cell value))
   java.lang.Boolean
-  (-write [value ^Cell cell]
+  (-write [value ^Cell cell options]
     (.setCellValue cell value))
   java.util.Date
-  (-write [value ^Cell cell]
+  (-write [value ^Cell cell options]
     (.setCellValue cell value))
   java.lang.Long
-  (-write [value ^Cell cell]
+  (-write [value ^Cell cell options]
     (.setCellValue cell (double value)))
+  clojure.lang.IPersistentMap
+  (-write [value ^Cell cell options]
+    (if (:style value)
+      (.setCellStyle cell (get-in options [:styles (:style value)])))
+    (-write (:value value) cell options))
   nil
-  (-write [value ^Cell cell]
+  (-write [value ^Cell cell options]
     (.setCellValue cell "")))
 
-(defn write-cell! [^Cell cell value]
-  (-write value cell))
+(defn write-cell! [^Cell cell {:keys [style] :as options} value]
+  (if style
+    (.setCellStyle cell (get-in options [:styles style])))
+  (-write value cell options))
 
-(defn write-cells! [^Row row data columns styles]
+(defn write-cells! [^Row row options data]
   (doall
-    (map (fn [col-num data column]
-           (let [cell (.createCell row col-num)]
-             (if (:style column)
-               (.setCellStyle cell (get styles (:style column))))
-             (write-cell! cell data)))
+    (map (fn [col-num data column-options]
+           (write-cell! (.createCell row col-num) (merge options column-options) data))
          (range)
          data
-         (concat columns (repeat nil)))))
+         (concat (:columns options) (repeat nil)))))
 
-(defn write-rows! [^Sheet sheet rows columns styles]
-  (doall
-    (map-indexed (fn [row-num data]
-                   (-> (.createRow sheet (inc row-num))
-                       (write-cells! data columns styles)))
-                 rows)))
+(defn font [^Workbook wb {:keys [color name bold]}]
+  (doto (.createFont wb)
+    (cond-> color (.setColor color))
+    (cond-> name (.setName name))
+    (cond-> bold (.setBold bold))))
 
-(defn append-row! [^Sheet sheet data]
-  (let [last-row-num (inc (.getLastRowNum sheet))]
-    (-> (.createRow sheet last-row-num)
-        (write-cells! data))))
+(defn color [r g b]
+  (XSSFColor. (Color. (int r) (int g) (int b))))
 
-(defn autosize-cols!
-  "Bloody slow! Do not use ever!"
-  [^Sheet sheet]
-  (let [num-cols (.getLastCellNum (.getRow sheet 0))]
-    (doseq [n (range num-cols)]
-      (.autoSizeColumn sheet n))))
+(defn data-format [^Workbook wb {:keys [type pattern locale]}]
+  (case type
+    :date (let [l (Locale. locale)
+                date-format (DateFormatConverter/convert l pattern)]
+            (.getFormat (.createDataFormat wb) date-format))))
+
+(def border
+  {:thick CellStyle/BORDER_THICK
+   :thin CellStyle/BORDER_THIN})
+
+(def fill-pattern
+  {:solid FillPatternType/SOLID_FOREGROUND})
+
+; XSSFWorkbook or SXSSFWorkbook
+; Workbook doesn't work with XSSFColor
+(defn cell-style [wb
+                  {:keys [background-color foreground-color
+                          border-bottom border-left border-right border-top]
+                   :as options}]
+  (doto (.createCellStyle wb)
+    (cond-> (:font options) (.setFont (font wb (:font options))))
+    (cond-> (:fill-pattern options) (.setFillPattern (fill-pattern (:fill-pattern options))))
+    (cond-> foreground-color (.setFillForegroundColor foreground-color))
+    (cond-> background-color (.setFillBackgroundColor background-color))
+    (cond-> border-bottom (.setBorderBottom (border border-bottom)))
+    (cond-> border-left (.setBorderBottom (border border-left)))
+    (cond-> border-right (.setBorderBottom (border border-right)))
+    (cond-> border-top (.setBorderBottom (border border-top)))
+    (cond-> (:data-format options) (.setDataFormat (data-format wb (:data-format options))))
+    ))
+
+(defn write-rows! [^Workbook wb ^Sheet sheet options rows]
+  (let [styles (into {} (for [[k v] (:styles options)]
+                          [k (cell-style wb v)]))
+        options (assoc options :styles styles)]
+    (doseq [[i {:keys [width style]}] (map-indexed vector (:columns options))]
+      (if width
+        (.setColumnWidth sheet i width))
+      ; Doesn't work in Excel -> setCellStyle for each cell
+      (if style
+        (.setDefaultColumnStyle sheet i (get styles style))))
+    (doall
+      (map-indexed (fn [row-num data]
+                     (if data
+                       (write-cells! (.createRow sheet row-num) options data)))
+                   rows))))
+
+(defn to-file! [file ^Workbook wb]
+  (with-open [os (io/output-stream file)]
+    (.write wb os)))
 
 (defn column-width
   "Column width is given in 1/256ths of character width."

@@ -68,15 +68,19 @@
       test-workbook
       sheet
       {:styles {:date {:data-format {:type :date :pattern "dd.MM.yyyy HH.MM" :locale "fi"}}
+                :currency {:data-format {:type :custom :format-str "#0\\,00 €"}}
                 :header {:font {:bold true}
                          :border-bottom :thick
                          :fill-pattern :solid
                          :foreground-color (l/color 200 200 200)}}
        :columns [{:width (l/column-width 10)}
-                 {:width (l/column-width 15) :style :date}]}
+                 {:width (l/column-width 15) :style :date}
+                 {:width (l/column-width 10) :style :currency}]}
       [[{:style :header :value "Stuff"}
-        {:style :header :value "Date"}]
+        {:style :header :value "Date"}
+        {:style :header :value "Money"}]
        ["Foo" #inst "2016-03-09T14:05:00"]
-       ["Bar" #inst "2016-03-09T14:05:00"]])
+       ["Bar" #inst "2016-03-09T14:05:00"]
+       ["Qux" 100000]])
     (l/to-file! file test-workbook)
     file))

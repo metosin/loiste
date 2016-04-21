@@ -166,11 +166,13 @@
 (defn color [r g b]
   (XSSFColor. (Color. (int r) (int g) (int b))))
 
-(defn data-format [^Workbook wb {:keys [type pattern locale]}]
+(defn data-format [^Workbook wb {:keys [type] :as data-format}]
   (case type
-    :date (let [l (Locale. locale)
-                date-format (DateFormatConverter/convert l pattern)]
-            (.getFormat (.createDataFormat wb) date-format))))
+    :date (let [l (Locale. (:locale data-format))
+                date-fmt (DateFormatConverter/convert l (:pattern data-format))]
+            (.getFormat (.createDataFormat wb) date-fmt))
+    :custom (let [data-fmt (.createDataFormat wb)]
+              (.getFormat data-fmt (:format-str data-format)))))
 
 (def border
   {:thick CellStyle/BORDER_THICK

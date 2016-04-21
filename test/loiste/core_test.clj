@@ -27,13 +27,14 @@
            (.getLastRowNum (l/sheet test-workbook "Sheet1")))))
 
   (testing "parsing excel should return sequence of maps containing data keyed by spec"
-    (is (= sheet1-result (rest (sheet->map test-spec (l/sheet test-workbook "Sheet1")))))))
+    (is (= sheet1-result (rest (l/sheet->map test-spec (l/sheet test-workbook "Sheet1")))))))
 
 (deftest write-to-template-test
-  (let [test-workbook (workbook (io/resource "excel_test.xlsx"))
+  (let [test-workbook (l/workbook (io/resource "excel_test.xlsx"))
         sheet (l/sheet test-workbook "EmptySheet")
         file (File/createTempFile "test-file" ".xlsx")]
     (l/write-rows!
+      test-workbook
       sheet
       {}
       [nil ; Skip header row
@@ -48,7 +49,7 @@
     (testing "Writing results into a correct data getting written"
       (is (= [{:A "Foo" :B true :C 1.0}
               {:A "Bar" :B ""   :C 2.0}]
-             (rest (sheet->map test-spec sheet)))))
+             (rest (l/sheet->map test-spec sheet)))))
 
     file))
 
@@ -60,7 +61,7 @@
                               {:a 2 :b 3 :c 4}]))))
 
 (deftest write-new-file-test
-  (let [test-workbook (workbook)
+  (let [test-workbook (l/workbook)
         sheet (l/sheet test-workbook)
         file (File/createTempFile "test-file" ".xlsx")]
     (l/write-rows!

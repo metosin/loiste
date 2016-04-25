@@ -2,17 +2,17 @@
 
 An Excel library for Clojure.
 
----
+> Verb
+> **Loistaa (Excel)**
+> 
+> 1. (intransitive) To shine, glow, glare, sparkle (to emit light).
+> 2. (intransitive) To excel, shine (to distinguish oneself).
+> 
+> Nouns: Loiste
 
-Verb<br/>
-**Loistaa (Excel)**
+## Latest version
 
-1. (intransitive) To shine, glow, glare, sparkle (to emit light).
-2. (intransitive) To excel, shine (to distinguish oneself).
-
-Nouns: Loiste
-
----
+[![Clojars Project](http://clojars.org/metosin/loiste/latest-version.svg)](http://clojars.org/metosin/loiste)
 
 ## Usage
 

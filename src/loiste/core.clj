@@ -87,10 +87,11 @@
     (condp = (.getCellType cell)
       Cell/CELL_TYPE_NUMERIC  (.getNumericCellValue cell)
       Cell/CELL_TYPE_STRING   (.getStringCellValue cell)
-      #_Cell/CELL_TYPE_FORMULA ; FIXME: how to handle formulas?
+      ;Cell/CELL_TYPE_FORMULA  nil
       Cell/CELL_TYPE_BLANK    nil
       Cell/CELL_TYPE_BOOLEAN  (.getBooleanCellValue cell)
-      Cell/CELL_TYPE_ERROR    nil)))
+      ;Cell/CELL_TYPE_ERROR    nil
+      nil)))
 
 (defn- parse-row-spec [data [value [cell-name & tfs]]]
   (assoc data cell-name (if tfs (reduce (fn [v f] (f v)) value tfs) value)))

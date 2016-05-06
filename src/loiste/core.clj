@@ -3,13 +3,10 @@
             [clojure.string :as s])
   (:import [java.util Locale]
            [java.awt Color]
-           [org.apache.poi.ss.usermodel Workbook Sheet Row Cell CellStyle FillPatternType]
+           [org.apache.poi.ss.usermodel Workbook Sheet Row Cell CellStyle FillPatternType DataFormat CellStyle]
            [org.apache.poi.ss.util DateFormatConverter]
-           [org.apache.poi.xssf.usermodel XSSFWorkbook XSSFDataFormat XSSFFont
-            XSSFColor]
+           [org.apache.poi.xssf.usermodel XSSFWorkbook XSSFDataFormat XSSFFont XSSFColor XSSFCellStyle]
            [org.apache.poi.xssf.streaming SXSSFWorkbook]))
-
-(set! *warn-on-reflection* true)
 
 (defprotocol ToWorkbook
   (-to-workbook [this] "Reads object to Workbook"))
@@ -163,7 +160,7 @@
 (defn font [^Workbook wb {:keys [color name bold]}]
   (doto (.createFont wb)
     (cond-> color (.setColor color))
-    (cond-> name (.setName name))
+    (cond-> name (.setFontName name))
     (cond-> bold (.setBold bold))))
 
 (defn color [r g b]
@@ -172,10 +169,10 @@
 (defn data-format [^Workbook wb {:keys [type] :as data-format}]
   (case type
     :date (let [l (Locale. (:locale data-format))
-                date-fmt (DateFormatConverter/convert l (:pattern data-format))]
+                date-fmt (DateFormatConverter/convert l ^String (:pattern data-format))]
             (.getFormat (.createDataFormat wb) date-fmt))
-    :custom (let [data-fmt (.createDataFormat wb)]
-              (.getFormat data-fmt (:format-str data-format)))))
+    :custom (let [^DataFormat data-fmt (.createDataFormat wb)]
+              (.getFormat data-fmt ^String (:format-str data-format)))))
 
 (def border
   {:thick CellStyle/BORDER_THICK
@@ -184,23 +181,33 @@
 (def fill-pattern
   {:solid FillPatternType/SOLID_FOREGROUND})
 
-; XSSFWorkbook or SXSSFWorkbook
-; Workbook doesn't work with XSSFColor
-(defn cell-style [wb
+(defn cell-style [^Workbook wb
                   {:keys [background-color foreground-color
                           border-bottom border-left border-right border-top]
                    :as options}]
-  (doto (.createCellStyle wb)
-    (cond-> (:font options) (.setFont (font wb (:font options))))
-    (cond-> (:fill-pattern options) (.setFillPattern (fill-pattern (:fill-pattern options))))
-    (cond-> foreground-color (.setFillForegroundColor foreground-color))
-    (cond-> background-color (.setFillBackgroundColor background-color))
-    (cond-> border-bottom (.setBorderBottom (border border-bottom)))
-    (cond-> border-left (.setBorderBottom (border border-left)))
-    (cond-> border-right (.setBorderBottom (border border-right)))
-    (cond-> border-top (.setBorderBottom (border border-top)))
-    (cond-> (:data-format options) (.setDataFormat (data-format wb (:data-format options))))
-    ))
+  (let [^CellStyle cell-style (.createCellStyle wb)
+        xssf? (or (instance? XSSFWorkbook wb) (instance? SXSSFWorkbook))]
+    (if (:font options)
+      (.setFont cell-style (font wb (:font options))))
+    (if (and (:fill-pattern options) xssf?)
+      (if-let [^FillPatternType x (fill-pattern (:fill-pattern options))]
+        (.setFillPattern ^XSSFCellStyle cell-style x)
+        (throw (IllegalArgumentException. (format "Invalid fill-pattern: %s" (:fill-pattern options))))))
+    (if (and foreground-color xssf?)
+      (.setFillForegroundColor ^XSSFCellStyle cell-style ^XSSFColor foreground-color))
+    (if (and background-color xssf?)
+      (.setFillBackgroundColor ^XSSFCellStyle cell-style ^XSSFColor background-color))
+    (if border-bottom
+      (.setBorderBottom cell-style (border border-bottom)))
+    (if border-left
+      (.setBorderBottom cell-style (border border-left)))
+    (if border-right
+      (.setBorderBottom cell-style (border border-right)))
+    (if border-top
+      (.setBorderBottom cell-style (border border-top)))
+    (if (:data-format options)
+      (.setDataFormat cell-style (data-format wb (:data-format options))))
+    cell-style))
 
 (defn write-rows! [^Workbook wb ^Sheet sheet options rows]
   (let [styles (into {} (for [[k v] (:styles options)]

@@ -1,4 +1,4 @@
-(defproject metosin/loiste "0.0.6"
+(defproject metosin/loiste "0.0.7"
   :description "An Excel library for Clojure"
   :url "https://github.com/metosin/loiste"
   :license {:name "Eclipse Public License"

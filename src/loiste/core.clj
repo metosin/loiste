@@ -201,11 +201,11 @@
     (if border-bottom
       (.setBorderBottom cell-style (border border-bottom)))
     (if border-left
-      (.setBorderBottom cell-style (border border-left)))
+      (.setBorderLeft cell-style (border border-left)))
     (if border-right
-      (.setBorderBottom cell-style (border border-right)))
+      (.setBorderRight cell-style (border border-right)))
     (if border-top
-      (.setBorderBottom cell-style (border border-top)))
+      (.setBorderTop cell-style (border border-top)))
     (if (:data-format options)
       (.setDataFormat cell-style (data-format wb (:data-format options))))
     (if wrap

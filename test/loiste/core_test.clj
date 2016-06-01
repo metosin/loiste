@@ -71,6 +71,7 @@
                 :currency {:data-format {:type :custom :format-str "#0\\,00 €"}}
                 :header {:font {:bold true}
                          :border-bottom :thick
+                         :border-right :thin
                          :fill-pattern :solid
                          :foreground-color (l/color 200 200 200)}
                 :wrapping-text {:wrap true}}

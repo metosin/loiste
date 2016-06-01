@@ -213,7 +213,10 @@
   (if data
     (let [row (.createRow sheet row-num)]
       (if (map? data)
-        (write-cells! row options (:values data))
+        (do
+          (if (:height data)
+            (.setHeightInPoints row (:height data)))
+          (write-cells! row options (:values data)))
         (write-cells! row options data)))))
 
 (defn write-rows! [^Workbook wb ^Sheet sheet options rows]

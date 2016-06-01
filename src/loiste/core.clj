@@ -183,7 +183,8 @@
 
 (defn cell-style [^Workbook wb
                   {:keys [background-color foreground-color
-                          border-bottom border-left border-right border-top]
+                          border-bottom border-left border-right border-top
+                          wrap]
                    :as options}]
   (let [^CellStyle cell-style (.createCellStyle wb)
         xssf? (or (instance? XSSFWorkbook wb) (instance? SXSSFWorkbook))]
@@ -207,6 +208,8 @@
       (.setBorderBottom cell-style (border border-top)))
     (if (:data-format options)
       (.setDataFormat cell-style (data-format wb (:data-format options))))
+    (if wrap
+      (.setWrapText cell-style true))
     cell-style))
 
 (defn write-row! [^Sheet sheet options row-num data]

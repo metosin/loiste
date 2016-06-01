@@ -72,14 +72,18 @@
                 :header {:font {:bold true}
                          :border-bottom :thick
                          :fill-pattern :solid
-                         :foreground-color (l/color 200 200 200)}}
+                         :foreground-color (l/color 200 200 200)}
+                :wrapping-text {:wrap true}}
        :columns [{:width (l/column-width 10)}
                  {:width (l/column-width 15) :style :date}
                  {:width (l/column-width 10) :style :currency}]}
       [[{:style :header :value "Stuff"}
         {:style :header :value "Date"}
         {:style :header :value "Money"}]
-       {:height 100 :values ["Foo" #inst "2016-03-09T14:05:00"]}
+       {:height 100
+        :values [{:style :wrapping-text
+                  :value "This is a long text that should wrap"}
+                 #inst "2016-03-09T14:05:00"]}
        ["Bar" #inst "2016-03-09T14:05:00"]
        ["Qux" 100000]])
     (l/to-file! file test-workbook)

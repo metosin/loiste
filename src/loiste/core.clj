@@ -209,6 +209,13 @@
       (.setDataFormat cell-style (data-format wb (:data-format options))))
     cell-style))
 
+(defn write-row! [^Sheet sheet options row-num data]
+  (if data
+    (let [row (.createRow sheet row-num)]
+      (if (map? data)
+        (write-cells! row options (:values data))
+        (write-cells! row options data)))))
+
 (defn write-rows! [^Workbook wb ^Sheet sheet options rows]
   (let [styles (into {} (for [[k v] (:styles options)]
                           [k (cell-style wb v)]))
@@ -220,10 +227,7 @@
       (if style
         (.setDefaultColumnStyle sheet i (get styles style))))
     (doall
-      (map-indexed (fn [row-num data]
-                     (if data
-                       (write-cells! (.createRow sheet row-num) options data)))
-                   rows))))
+      (map-indexed #(write-row! sheet options %1 %2) rows))))
 
 (defn to-file! [file ^Workbook wb]
   (with-open [os (io/output-stream file)]

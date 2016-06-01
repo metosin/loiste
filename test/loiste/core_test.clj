@@ -79,7 +79,7 @@
       [[{:style :header :value "Stuff"}
         {:style :header :value "Date"}
         {:style :header :value "Money"}]
-       ["Foo" #inst "2016-03-09T14:05:00"]
+       {:height 100 :values ["Foo" #inst "2016-03-09T14:05:00"]}
        ["Bar" #inst "2016-03-09T14:05:00"]
        ["Qux" 100000]])
     (l/to-file! file test-workbook)

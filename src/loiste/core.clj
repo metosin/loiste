@@ -187,7 +187,7 @@
                           wrap]
                    :as options}]
   (let [^CellStyle cell-style (.createCellStyle wb)
-        xssf? (or (instance? XSSFWorkbook wb) (instance? SXSSFWorkbook))]
+        xssf? (or (instance? XSSFWorkbook wb) (instance? SXSSFWorkbook wb))]
     (if (:font options)
       (.setFont cell-style (font wb (:font options))))
     (if (and (:fill-pattern options) xssf?)

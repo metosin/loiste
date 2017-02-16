@@ -123,10 +123,7 @@
   java.lang.String
   (-write [value ^Cell cell options]
     (.setCellValue cell value))
-  java.lang.Double
-  (-write [value ^Cell cell options]
-    (.setCellValue cell value))
-  java.lang.Float
+  java.lang.Number
   (-write [value ^Cell cell options]
     (.setCellValue cell (double value)))
   java.lang.Boolean
@@ -135,18 +132,6 @@
   java.util.Date
   (-write [value ^Cell cell options]
     (.setCellValue cell value))
-  java.lang.Long
-  (-write [value ^Cell cell options]
-    (.setCellValue cell (double value)))
-  java.lang.Integer
-  (-write [value ^Cell cell options]
-    (.setCellValue cell (double value)))
-  java.lang.Short
-  (-write [value ^Cell cell options]
-    (.setCellValue cell (double value)))
-  java.lang.Byte
-  (-write [value ^Cell cell options]
-    (.setCellValue cell (double value)))
   clojure.lang.Named
   (-write [value ^Cell cell options]
     (.setCellValue cell (name value)))

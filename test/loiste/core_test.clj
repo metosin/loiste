@@ -86,6 +86,8 @@
                   :value "This is a long text that should wrap"}
                  #inst "2016-03-09T14:05:00"]}
        ["Bar" #inst "2016-03-09T14:05:00"]
-       ["Qux" 100000]])
+       ["Qux" 100000]
+       ["Integer" (count '(1 2 3))]
+       ["Keyword" :foo]])
     (l/to-file! file test-workbook)
     file))

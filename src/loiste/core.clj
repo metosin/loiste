@@ -126,6 +126,9 @@
   java.lang.Double
   (-write [value ^Cell cell options]
     (.setCellValue cell value))
+  java.lang.Float
+  (-write [value ^Cell cell options]
+    (.setCellValue cell (double value)))
   java.lang.Boolean
   (-write [value ^Cell cell options]
     (.setCellValue cell value))

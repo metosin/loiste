@@ -123,18 +123,18 @@
   java.lang.String
   (-write [value ^Cell cell options]
     (.setCellValue cell value))
-  java.lang.Double
+  java.lang.Number
   (-write [value ^Cell cell options]
-    (.setCellValue cell value))
+    (.setCellValue cell (double value)))
   java.lang.Boolean
   (-write [value ^Cell cell options]
     (.setCellValue cell value))
   java.util.Date
   (-write [value ^Cell cell options]
     (.setCellValue cell value))
-  java.lang.Long
+  clojure.lang.Named
   (-write [value ^Cell cell options]
-    (.setCellValue cell (double value)))
+    (.setCellValue cell (name value)))
   clojure.lang.IPersistentMap
   (-write [value ^Cell cell options]
     (if (:style value)

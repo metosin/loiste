@@ -7,6 +7,7 @@
 (def test-spec
   [[:A]
    [:B]
+   nil
    [:C]])
 
 (def test-workbook (l/workbook (io/resource "excel_test.xlsx")))
@@ -38,15 +39,15 @@
       sheet
       {}
       [nil ; Skip header row
-       ["Foo" true 1.0]
-       ["Bar" nil  2.0]])
+       ["Foo" true "ignore" 1.0]
+       ["Bar" nil  "ignore" 2.0]])
 
     (l/to-file! file test-workbook)
 
     (testing "Writing results into a correct number of rows"
       (is (= 2 (.getLastRowNum sheet))))
 
-    (testing "Writing results into a correct data getting written"
+    (testing "parse the written data"
       (is (= [{:A "Foo" :B true :C 1.0}
               {:A "Bar" :B ""   :C 2.0}]
              (rest (l/sheet->map test-spec sheet)))))

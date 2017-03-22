@@ -96,8 +96,11 @@
       ;Cell/CELL_TYPE_ERROR    nil
       nil)))
 
-(defn- parse-row-spec [data [value [cell-name & tfs]]]
-  (assoc data cell-name (if tfs (reduce (fn [v f] (f v)) value tfs) value)))
+(defn- parse-row-spec [data [value spec]]
+  (if spec
+    (let [[cell-name & tfs] spec]
+      (assoc data cell-name (if tfs (reduce (fn [v f] (f v)) value tfs) value)))
+    data))
 
 (defn parse-row
   ([specs ^Row row] (parse-row specs identity row))

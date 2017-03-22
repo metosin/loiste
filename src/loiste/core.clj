@@ -79,13 +79,18 @@
     (for [col (range (.getLastCellNum row))]
       (.getCell row col))))
 
+(def static-formulas
+  {"TRUE()" true
+   "FALSE()" false})
+
 (defn cell-value [^Cell cell]
   (if cell
     ; FIXME: Why doesn't case work here?
     (condp = (.getCellType cell)
       Cell/CELL_TYPE_NUMERIC  (.getNumericCellValue cell)
       Cell/CELL_TYPE_STRING   (.getStringCellValue cell)
-      ;Cell/CELL_TYPE_FORMULA  nil
+      Cell/CELL_TYPE_FORMULA  (let [formula (.getCellFormula cell)]
+                                (get static-formulas formula))
       Cell/CELL_TYPE_BLANK    nil
       Cell/CELL_TYPE_BOOLEAN  (.getBooleanCellValue cell)
       ;Cell/CELL_TYPE_ERROR    nil

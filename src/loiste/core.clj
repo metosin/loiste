@@ -25,8 +25,9 @@
       (.setMissingCellPolicy Row/RETURN_BLANK_AS_NULL)))
   java.net.URL
   (-to-workbook [this]
-    (doto (XSSFWorkbook. (io/input-stream this))
-      (.setMissingCellPolicy Row/RETURN_BLANK_AS_NULL))))
+    (with-open [is (io/input-stream this)]
+      (doto (XSSFWorkbook. is)
+        (.setMissingCellPolicy Row/RETURN_BLANK_AS_NULL)))))
 
 (defn workbook
   "Creates a new workbook or opens existing workbook.

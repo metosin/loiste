@@ -3,7 +3,7 @@
             [clojure.string :as s])
   (:import [java.util Locale]
            [java.awt Color]
-           [org.apache.poi.ss.usermodel Workbook Sheet Row Cell CellStyle FillPatternType DataFormat CellStyle]
+           [org.apache.poi.ss.usermodel Workbook Sheet Row Cell CellStyle FillPatternType DataFormat CellStyle DateUtil]
            [org.apache.poi.ss.util DateFormatConverter]
            [org.apache.poi.xssf.usermodel XSSFWorkbook XSSFDataFormat XSSFFont XSSFColor XSSFCellStyle]
            [org.apache.poi.xssf.streaming SXSSFWorkbook]))
@@ -88,7 +88,9 @@
     (case (.name (.getCellTypeEnum cell))
       ;; Note: createCell + setCellStyle + isCellDateFormatted doesn't work
       ;; isCellDateFormatted seems to require that workboot is written to file or something
-      "NUMERIC"  (.getNumericCellValue cell)
+      "NUMERIC"  (if (DateUtil/isCellDateFormatted cell)
+                   (.getDateCellValue cell)
+                   (.getNumericCellValue cell))
       "STRING"   (.getStringCellValue cell)
       "FORMULA"  (let [formula (.getCellFormula cell)]
                                 (get static-formulas formula))

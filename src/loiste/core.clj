@@ -85,16 +85,18 @@
 
 (defn cell-value [^Cell cell]
   (if cell
-    ; FIXME: Why doesn't case work here?
-    (condp = (.getCellType cell)
-      Cell/CELL_TYPE_NUMERIC  (.getNumericCellValue cell)
-      Cell/CELL_TYPE_STRING   (.getStringCellValue cell)
-      Cell/CELL_TYPE_FORMULA  (let [formula (.getCellFormula cell)]
+    (case (.name (.getCellTypeEnum cell))
+      ;; Note: createCell + setCellStyle + isCellDateFormatted doesn't work
+      ;; isCellDateFormatted seems to require that workboot is written to file or something
+      "NUMERIC"  (.getNumericCellValue cell)
+      "STRING"   (.getStringCellValue cell)
+      "FORMULA"  (let [formula (.getCellFormula cell)]
                                 (get static-formulas formula))
-      Cell/CELL_TYPE_BLANK    nil
-      Cell/CELL_TYPE_BOOLEAN  (.getBooleanCellValue cell)
-      ;Cell/CELL_TYPE_ERROR    nil
-      nil)))
+      "BOOLEAN"  (.getBooleanCellValue cell)
+      "BLANK"    nil
+      "ERROR"    nil
+      "_NONE"    nil
+      )))
 
 (defn- parse-row-spec [data [value spec]]
   (if spec

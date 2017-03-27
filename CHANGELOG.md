@@ -7,6 +7,7 @@ for data map keys
 - Supports `TRUE()` and `FALSE()` formulas (coerced to booleans)
 - Ignore columns with nil in read spec ([#5](https://github.com/metosin/loiste/issues/5))
 - Close input-stream in `-to-workbook` `URL` implementation ([#4](https://github.com/metosin/loiste/issues/4))
+- Don't skip empty values at the end of row
 
 ## 0.0.8 (2.1.2017)
 

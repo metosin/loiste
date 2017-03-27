@@ -109,7 +109,9 @@
 (defn parse-row
   ([specs ^Row row] (parse-row specs identity row))
   ([specs transform ^Row row]
-    (reduce parse-row-spec {} (map vector (->> row cells (map (comp transform cell-value))) specs))))
+   ;; concat + repeat to make sure there is a value for each spec, else map will missing
+   ;; properties from the end of the spec if the last values are empty
+   (reduce parse-row-spec {} (map vector (concat (->> row cells (map (comp transform cell-value))) (repeat nil)) specs))))
 
 (defn blank-cells? [row]
   (every? (fn [cell] (and (string? cell) (s/blank? cell))) (vals row)))

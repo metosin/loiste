@@ -65,6 +65,7 @@
   (let [test-workbook (l/workbook)
         sheet (l/sheet test-workbook)
         file (File/createTempFile "test-file" ".xlsx")]
+    (println "Test file " (.getPath file))
     (l/write-rows!
       test-workbook
       sheet
@@ -86,9 +87,17 @@
         :values [{:style :wrapping-text
                   :value "This is a long text that should wrap"}
                  #inst "2016-03-09T14:05:00"]}
-       ["Bar" #inst "2016-03-09T14:05:00"]
-       ["Qux" 100000]
-       ["Integer" (count '(1 2 3))]
-       ["Keyword" :foo]])
+       ["Bar" #inst "2016-03-09T14:05:00" 15]
+       ["Qux" 100000 100]
+       ["Integer" (count '(1 2 3)) 10000]
+       ["Keyword" :foo nil]])
     (l/to-file! file test-workbook)
-    file))
+    file
+
+    (let [read-workbook (l/workbook file)]
+      (is (= [{:Stuff "This is a long text that should wrap" :Date #inst "2016-03-09T14:05:00"}
+              {:Stuff "Bar" :Date #inst "2016-03-09T14:05:00" :Money 15.0}
+              {:Stuff "Qux" :Date #inst "2173-10-13T21:00:00.000-00:00" :Money 100.0}
+              {:Stuff "Integer" :Date #inst "1900-01-02T22:20:11.000-00:00" :Money 10000.0}
+              {:Stuff "Keyword" :Date "foo" :Money ""}]
+             (l/read-sheet sheet))))))

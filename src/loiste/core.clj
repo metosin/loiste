@@ -125,6 +125,16 @@
        (map (partial parse-row spec))
        (strip-blank-rows)))
 
+(defn read-sheet
+  "Create map key names based on the column labels on the first row."
+  {:added "0.1.0"}
+  ([sheet] (read-sheet sheet nil))
+  ([sheet {:keys [column-name-fn]
+           :or {column-name-fn keyword}}]
+   (let [[headers & rows] (rows sheet)
+         spec (map #(vector (column-name-fn (str %))) headers)]
+     (sheet->map spec rows))))
+
 ;;
 ;; Write to excel
 ;;

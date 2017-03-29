@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.0 (29.3.2017)
 
 - Uses `isCellDateFormatted` to check if numeric cell value should be
 returned as `Date`

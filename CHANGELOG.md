@@ -9,13 +9,19 @@ for data map keys
 - Close input-stream in `-to-workbook` `URL` implementation ([#4](https://github.com/metosin/loiste/issues/4))
 - Don't skip empty values at the end of row
 
+**[compare](https://github.com/metosin/loiste/compare/0.0.8...0.1.0)**
+
 ## 0.0.8 (2.1.2017)
 
 - Fix cell-style for streaming workbooks (wrong number of arguments given to instance?)
 
+**[compare](https://github.com/metosin/loiste/compare/0.0.7...0.0.8)**
+
 ## 0.0.7 (1.6.2016)
 
 - Bugfix for setting top, left and right borders incorrectly to bottom
+
+**[compare](https://github.com/metosin/loiste/compare/0.0.6...0.0.7)**
 
 ## 0.0.6 (1.6.2016)
 

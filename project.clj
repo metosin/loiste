@@ -5,8 +5,8 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"
             :distribution :repo
             :comments "same as Clojure"}
-  :dependencies [[org.apache.poi/poi-ooxml "3.15"]]
+  :dependencies [[org.apache.poi/poi-ooxml "4.1.2"]]
 
-  :profiles {:dev {:dependencies [[org.clojure/clojure "1.8.0"]
-                                  [joda-time "2.9.3"]]
+  :profiles {:dev {:dependencies [[org.clojure/clojure "1.10.1"]
+                                  [joda-time "2.10.5"]]
                    :resource-paths ["dev-resources"]}})

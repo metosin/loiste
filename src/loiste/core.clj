@@ -3,9 +3,10 @@
             [clojure.string :as s])
   (:import [java.util Locale]
            [java.awt Color]
-           [org.apache.poi.ss.usermodel Workbook Sheet Row Cell CellStyle FillPatternType DataFormat CellStyle DateUtil]
+           [org.apache.poi.ss.usermodel Workbook Sheet Row Cell CellStyle FillPatternType DataFormat CellStyle DateUtil
+            Row$MissingCellPolicy BorderStyle]
            [org.apache.poi.ss.util DateFormatConverter]
-           [org.apache.poi.xssf.usermodel XSSFWorkbook XSSFDataFormat XSSFFont XSSFColor XSSFCellStyle]
+           [org.apache.poi.xssf.usermodel XSSFWorkbook XSSFColor XSSFCellStyle]
            [org.apache.poi.xssf.streaming SXSSFWorkbook]))
 
 (defprotocol ToWorkbook
@@ -18,16 +19,17 @@
   java.io.File
   (-to-workbook [this]
     (doto (XSSFWorkbook. this)
-      (.setMissingCellPolicy Row/RETURN_BLANK_AS_NULL)))
+      (.setMissingCellPolicy Row$MissingCellPolicy/RETURN_BLANK_AS_NULL)))
   java.io.InputStream
   (-to-workbook [this]
-    (doto (XSSFWorkbook. this)
-      (.setMissingCellPolicy Row/RETURN_BLANK_AS_NULL)))
+    ;; XSSFWorkbook contructor buffers the whole IS into memory, so the stream
+    ;; can be closed.
+    (with-open [is this]
+      (doto (XSSFWorkbook. is)
+        (.setMissingCellPolicy Row$MissingCellPolicy/RETURN_BLANK_AS_NULL))))
   java.net.URL
   (-to-workbook [this]
-    (with-open [is (io/input-stream this)]
-      (doto (XSSFWorkbook. is)
-        (.setMissingCellPolicy Row/RETURN_BLANK_AS_NULL)))))
+    (-to-workbook (io/input-stream this))))
 
 (defn workbook
   "Creates a new workbook or opens existing workbook.
@@ -93,7 +95,7 @@
                    (.getNumericCellValue cell))
       "STRING"   (.getStringCellValue cell)
       "FORMULA"  (let [formula (.getCellFormula cell)]
-                                (get static-formulas formula))
+                   (get static-formulas formula))
       "BOOLEAN"  (.getBooleanCellValue cell)
       "BLANK"    nil
       "ERROR"    nil
@@ -200,8 +202,8 @@
               (.getFormat data-fmt ^String (:format-str data-format)))))
 
 (def border
-  {:thick CellStyle/BORDER_THICK
-   :thin CellStyle/BORDER_THIN})
+  {:thick BorderStyle/THICK
+   :thin BorderStyle/THIN})
 
 (def fill-pattern
   {:solid FillPatternType/SOLID_FOREGROUND})

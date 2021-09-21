@@ -87,7 +87,7 @@
 
 (defn cell-value [^Cell cell]
   (if cell
-    (case (.name (.getCellTypeEnum cell))
+    (case (.name (.getCellType cell))
       ;; Note: createCell + setCellStyle + isCellDateFormatted doesn't work
       ;; isCellDateFormatted seems to require that workboot is written to file or something
       "NUMERIC"  (if (DateUtil/isCellDateFormatted cell)

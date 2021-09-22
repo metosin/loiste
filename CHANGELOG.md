@@ -1,3 +1,9 @@
+## 1.1.0 (2021-09-22)
+
+- Updated org.apache.poi/poi-ooxml to version 5.0.0
+
+**[compare](https://github.com/metosin/loiste/compare/1.0.0...1.1.0)**
+
 ## 1.0.0 (2020-02-27)
 
 - Update POI dependency and fix compatibility with the latest POI

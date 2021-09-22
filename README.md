@@ -23,3 +23,9 @@ An Excel library for Clojure.
 - Streaming worksbooks (`SXSSFWorkbook`)
 - New workbooks & from template
 - Should support lazy seq as data
+
+## License
+
+Copyright © 2015-2021 [Metosin Oy](http://www.metosin.fi)
+
+Distributed under the Eclipse Public License, the same as Clojure.

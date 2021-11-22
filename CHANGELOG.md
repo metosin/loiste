@@ -1,3 +1,12 @@
+## 1.1.1 (2021-11-22)
+
+- Updated org.apache.poi/poi-ooxml to version 5.1.0
+    (fixes several CVEs in POI dependencies)
+- Switch `color` function to use rgb byte-array instead of going through `java.awt.Color`
+(should not break existing uses)
+
+**[compare](https://github.com/metosin/loiste/compare/1.1.0...1.1.1)**
+
 ## 1.1.0 (2021-09-22)
 
 - Updated org.apache.poi/poi-ooxml to version 5.0.0

@@ -2,11 +2,10 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as s])
   (:import [java.util Locale]
-           [java.awt Color]
            [org.apache.poi.ss.usermodel Workbook Sheet Row Cell CellStyle FillPatternType DataFormat CellStyle DateUtil
             Row$MissingCellPolicy BorderStyle]
            [org.apache.poi.ss.util DateFormatConverter]
-           [org.apache.poi.xssf.usermodel XSSFWorkbook XSSFColor XSSFCellStyle]
+           [org.apache.poi.xssf.usermodel XSSFWorkbook XSSFColor XSSFCellStyle DefaultIndexedColorMap]
            [org.apache.poi.xssf.streaming SXSSFWorkbook]))
 
 (defprotocol ToWorkbook
@@ -191,7 +190,10 @@
     (cond-> bold (.setBold bold))))
 
 (defn color [r g b]
-  (XSSFColor. (Color. (int r) (int g) (int b))))
+  (XSSFColor. (byte-array 3 [(unchecked-byte r)
+                             (unchecked-byte g)
+                             (unchecked-byte b)])
+              (DefaultIndexedColorMap.)))
 
 (defn data-format [^Workbook wb {:keys [type] :as data-format}]
   (case type

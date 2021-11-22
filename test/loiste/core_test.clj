@@ -100,4 +100,10 @@
                 {:Stuff "Qux" :Date #inst "2173-10-13T21:00:00.000-00:00" :Money 100.0}
                 {:Stuff "Integer" :Date #inst "1900-01-02T22:20:11.000-00:00" :Money 10000.0}
                 {:Stuff "Keyword" :Date "foo" :Money ""}]
-               (l/read-sheet read-sheet)))))))
+               (l/read-sheet read-sheet)))))
+
+    (.delete file)))
+
+(deftest color-test
+  (is (= (unchecked-byte 200)
+         (aget (.getRGB (l/color 200 200 200)) 0))))

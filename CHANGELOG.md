@@ -1,7 +1,14 @@
+## 1.1.2 (2022-01-25)
+
+- Updated org.apache.poi/poi-ooxml to version 5.2.0
+    (fixes a CVE in POI dependencies)
+
 ## 1.1.1 (2021-11-22)
 
 - Updated org.apache.poi/poi-ooxml to version 5.1.0
     (fixes several CVEs in POI dependencies)
+    - POI now uses log4j2 for logging, you need to provide a implementation for that.
+    - Use org.apache.logging.log4j/log4j-to-slf4j to redirect logging to slf4j.
 - Switch `color` function to use rgb byte-array instead of going through `java.awt.Color`
 (should not break existing uses)
 

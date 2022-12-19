@@ -1,0 +1,2 @@
+{:aliases {:nvd {:extra-deps {nvd-clojure/nvd-clojure {:mvn/version "2.11.0"}}
+                 :main-opts ["-m" "nvd.task.check"]}}}

@@ -1,2 +1,2 @@
 #!/bin/bash
-lein run -m nvd.task.check "" "$(lein with-profile -user,-dev classpath)"
+clj -J-Dclojure.main.report=stderr -J-Dorg.slf4j.simpleLogger.log.org.apache.commons=error -M:nvd "" "$(lein with-profile -user,-dev classpath)"

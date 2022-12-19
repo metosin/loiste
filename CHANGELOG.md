@@ -1,3 +1,8 @@
+## 1.1.3 (2022-12-19)
+
+- Updated org.apache.poi/poi-ooxml to version 5.2.3
+    (fixes a CVE in POI)
+
 ## 1.1.2 (2022-01-25)
 
 - Updated org.apache.poi/poi-ooxml to version 5.2.0

@@ -165,7 +165,9 @@
   (-write [value ^Cell cell options]
     (if (:style value)
       (.setCellStyle cell (get-in options [:styles (:style value)])))
-    (-write (:value value) cell options))
+    (-write (:value value) cell options)
+    (when-let [f (:build value)]
+      (f cell)))
   nil
   (-write [value ^Cell cell options]
     (.setBlank cell)))
@@ -183,11 +185,12 @@
          data
          (concat (:columns options) (repeat nil)))))
 
-(defn font [^Workbook wb {:keys [color name bold]}]
+(defn font [^Workbook wb {:keys [color name bold build]}]
   (doto (.createFont wb)
     (cond-> color (.setColor color))
     (cond-> name (.setFontName name))
-    (cond-> bold (.setBold bold))))
+    (cond-> bold (.setBold bold))
+    (cond-> build build)))
 
 (defn color [r g b]
   (XSSFColor. (byte-array 3 [(unchecked-byte r)
@@ -203,17 +206,24 @@
     :custom (let [^DataFormat data-fmt (.createDataFormat wb)]
               (.getFormat data-fmt ^String (:format-str data-format)))))
 
-(def border
+(def border*
   {:thick BorderStyle/THICK
    :thin BorderStyle/THIN})
 
-(def fill-pattern
+(defn border [value]
+  (get border* value value))
+
+(def fill-pattern*
   {:solid FillPatternType/SOLID_FOREGROUND})
+
+(defn fill-pattern [value]
+  (get fill-pattern* value value))
 
 (defn cell-style [^Workbook wb
                   {:keys [background-color foreground-color
                           border-bottom border-left border-right border-top
-                          wrap]
+                          wrap
+                          build]
                    :as options}]
   (let [^CellStyle cell-style (.createCellStyle wb)
         xssf? (or (instance? XSSFWorkbook wb) (instance? SXSSFWorkbook wb))]
@@ -239,6 +249,8 @@
       (.setDataFormat cell-style (data-format wb (:data-format options))))
     (if wrap
       (.setWrapText cell-style true))
+    (when build
+      (build cell-style))
     cell-style))
 
 (defn write-row! [^Sheet sheet options row-num data]
@@ -248,7 +260,9 @@
         (do
           (if (:height data)
             (.setHeightInPoints row (:height data)))
-          (write-cells! row options (:values data)))
+          (write-cells! row options (:values data))
+          (when-let [f (:build data)]
+            (f row)))
         (write-cells! row options data)))))
 
 (defn write-rows! [^Workbook wb ^Sheet sheet options rows]

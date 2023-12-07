@@ -1,8 +1,11 @@
 (ns loiste.core-test
-  (:require [clojure.test :refer [deftest testing is]]
-            [loiste.core :as l]
-            [clojure.java.io :as io])
-  (:import [java.io File]))
+  (:require
+   [clojure.java.io :as io]
+   [clojure.test :refer [deftest is testing]]
+   [loiste.core :as l])
+  (:import
+   [java.io File]
+   [org.apache.poi.ss.usermodel IndexedColors]))
 
 (def test-spec
   [[:A]
@@ -72,24 +75,40 @@
                     :currency {:data-format {:type :custom :format-str "#0\\,00 €"}}
                     :header {:font {:bold true}
                              :border-bottom :thick
-                             :border-right :thin
+                             :border-right org.apache.poi.ss.usermodel.BorderStyle/THIN
                              :fill-pattern :solid
                              :foreground-color (l/color 200 200 200)}
-                    :wrapping-text {:wrap true}}
+                    :wrapping-text {:wrap true}
+                    :interop-style {:build (fn [cell-style]
+                                             (.setWrapText cell-style true))}}
            :columns [{:width (l/column-width 10)}
                      {:width (l/column-width 15) :style :date}
                      {:width (l/column-width 10) :style :currency}]}
           [[{:style :header :value "Stuff"}
             {:style :header :value "Date"}
             {:style :header :value "Money"}]
-           {:height 100
+           {:build (fn [row]
+                     (.setHeightInPoints row 40))
             :values [{:style :wrapping-text
                       :value "This is a long text that should wrap"}
                      #inst "2016-03-09T14:05:00"]}
            ["Bar" #inst "2016-03-09T14:05:00" 15]
            ["Qux" 100000 100]
            ["Integer" (count '(1 2 3)) 10000]
-           ["Keyword" :foo nil]])
+           ["Keyword" :foo nil]
+           {:height 20
+            :values ["Interop"
+                     {:style :interop-style
+                      :build (fn [cell]
+                               (.setCellValue cell (doto (org.apache.poi.xssf.usermodel.XSSFRichTextString.)
+                                                     ;; Shouldn't call font many times, instead initialize different fonts for workbook and then
+                                                     ;; use those.
+                                                     (.append "foo" (l/font wb {:color (.. IndexedColors -RED -index)}))
+                                                     (.append "bar" (l/font wb {:color (.. IndexedColors -GREEN -index)}))
+                                                     (.append "!!!" (l/font wb {:color (.. IndexedColors -BLUE -index)})))))}
+                     {:style :interop-style
+                      :build (fn [cell]
+                               (.setCellFormula cell "C3+C5"))}]}])
 
         (l/to-file! file wb)))
 
@@ -99,7 +118,8 @@
                 {:Stuff "Bar" :Date #inst "2016-03-09T14:05:00" :Money 15.0}
                 {:Stuff "Qux" :Date #inst "2173-10-13T21:00:00.000-00:00" :Money 100.0}
                 {:Stuff "Integer" :Date #inst "1900-01-02T22:20:11.000-00:00" :Money 10000.0}
-                {:Stuff "Keyword" :Date "foo" :Money nil}]
+                {:Stuff "Keyword" :Date "foo" :Money nil}
+                {:Stuff "Interop" :Date "foobar!!!" :Money nil}]
                (l/read-sheet read-sheet)))))
 
     (.delete file)))

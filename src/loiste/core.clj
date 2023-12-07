@@ -168,7 +168,7 @@
     (-write (:value value) cell options))
   nil
   (-write [value ^Cell cell options]
-    (.setCellValue cell "")))
+    (.setBlank cell)))
 
 (defn write-cell! [^Cell cell {:keys [style] :as options} value]
   (if style

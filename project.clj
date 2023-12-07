@@ -1,11 +1,11 @@
-(defproject metosin/loiste "1.1.3"
+(defproject metosin/loiste "1.1.4"
   :description "An Excel library for Clojure"
   :url "https://github.com/metosin/loiste"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"
             :distribution :repo
             :comments "same as Clojure"}
-  :dependencies [[org.apache.poi/poi-ooxml "5.2.3"]]
+  :dependencies [[org.apache.poi/poi-ooxml "5.2.5"]]
 
   :profiles {:dev {:dependencies [[org.clojure/clojure "1.11.1"]
                                   [joda-time "2.12.2"]

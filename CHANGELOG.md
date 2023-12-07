@@ -1,3 +1,8 @@
+## 1.1.4 (2023-12-07)
+
+- Updated org.apache.poi/poi-ooxml to version 5.2.5
+- Write `nil` values as BLANK cells, instead of empty string.
+
 ## 1.1.3 (2022-12-19)
 
 - Updated org.apache.poi/poi-ooxml to version 5.2.3

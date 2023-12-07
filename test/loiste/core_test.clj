@@ -48,7 +48,7 @@
 
       (testing "parse the written data"
         (is (= [{:A "Foo" :B true :C 1.0}
-                {:A "Bar" :B ""   :C 2.0}]
+                {:A "Bar" :B nil   :C 2.0}]
                (rest (l/sheet->map test-spec sheet)))))
 
       file)))
@@ -99,7 +99,7 @@
                 {:Stuff "Bar" :Date #inst "2016-03-09T14:05:00" :Money 15.0}
                 {:Stuff "Qux" :Date #inst "2173-10-13T21:00:00.000-00:00" :Money 100.0}
                 {:Stuff "Integer" :Date #inst "1900-01-02T22:20:11.000-00:00" :Money 10000.0}
-                {:Stuff "Keyword" :Date "foo" :Money ""}]
+                {:Stuff "Keyword" :Date "foo" :Money nil}]
                (l/read-sheet read-sheet)))))
 
     (.delete file)))

@@ -64,6 +64,7 @@
   ;; Keep the file around after tests for testing opening,
   ;; but remove on the start.
   (let [file (io/file "test-out" "new-file-test.xslx")]
+    (io/make-parents file)
     (doseq [wb* [(l/workbook)
                  (l/streaming-workbook)]]
       (.delete file)

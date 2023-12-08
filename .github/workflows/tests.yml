@@ -1,0 +1,38 @@
+name: testsuite
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-clj:
+    strategy:
+      matrix:
+        # Supported Java versions: LTS releases 8 and 11 and the latest release
+        jdk: [8, 11, 17, 21]
+
+    name: Clojure (Java ${{ matrix.jdk }})
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-clj-${{ hashFiles('**/project.clj') }}
+        restore-keys: |
+          ${{ runner.os }}-clj-
+    - name: Setup Java ${{ matrix.jdk }}
+      uses: actions/setup-java@v4
+      with:
+        distribution: zulu
+        java-version: ${{ matrix.jdk }}
+    - name: Setup Clojure
+      uses: DeLaGuardo/setup-clojure@12.1
+      with:
+        lein: 2.9.5
+    - name: Run tests
+      run: lein test
+

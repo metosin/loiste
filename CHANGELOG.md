@@ -1,3 +1,7 @@
+## 1.1.5 (2025-01-15)
+
+- Updated org.apache.poi/poi-ooxml to version 5.4.0
+
 ## 1.1.4 (2023-12-07)
 
 - Updated org.apache.poi/poi-ooxml to version 5.2.5

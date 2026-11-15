@@ -1,3 +1,11 @@
+## Unreleased
+
+- Support all `BorderStyle` and `FillPatternType` values in cell styles ([#9](https://github.com/metosin/loiste/issues/9))
+    - Every enum value is available as a kebab-case keyword, e.g. `:medium-dashed`, `:double`, `:fine-dots`
+      (`:solid` still means `SOLID_FOREGROUND`)
+    - Enum values can also be passed directly, e.g. `:border-bottom BorderStyle/DOTTED`
+    - Invalid border values now throw `IllegalArgumentException`, like invalid fill patterns already did
+
 ## 1.1.5 (2025-01-15)
 
 - Updated org.apache.poi/poi-ooxml to version 5.4.0

@@ -203,12 +203,30 @@
     :custom (let [^DataFormat data-fmt (.createDataFormat wb)]
               (.getFormat data-fmt ^String (:format-str data-format)))))
 
+(defn- enum-keywords
+  "Map of kebab-case keyword to enum value for all values of enum type,
+  e.g. BorderStyle/MEDIUM_DASHED -> :medium-dashed."
+  [values]
+  (into {} (for [^Enum v values]
+             [(keyword (s/replace (s/lower-case (.name v)) "_" "-")) v])))
+
 (def border
-  {:thick BorderStyle/THICK
-   :thin BorderStyle/THIN})
+  "Keyword to BorderStyle for every BorderStyle value, e.g. :thin, :medium-dashed."
+  (enum-keywords (BorderStyle/values)))
 
 (def fill-pattern
-  {:solid FillPatternType/SOLID_FOREGROUND})
+  "Keyword to FillPatternType for every FillPatternType value, e.g. :solid-foreground,
+  :fine-dots. :solid is an alias for :solid-foreground."
+  (assoc (enum-keywords (FillPatternType/values))
+         :solid FillPatternType/SOLID_FOREGROUND))
+
+(defn- ->enum
+  "Resolves keyword through lookup map, or returns enum value of type klass as is."
+  [^Class klass lookup option-name v]
+  (cond
+    (instance? klass v) v
+    (contains? lookup v) (get lookup v)
+    :else (throw (IllegalArgumentException. (format "Invalid %s: %s" option-name v)))))
 
 (defn cell-style [^Workbook wb
                   {:keys [background-color foreground-color
@@ -220,21 +238,20 @@
     (if (:font options)
       (.setFont cell-style (font wb (:font options))))
     (if (and (:fill-pattern options) xssf?)
-      (if-let [^FillPatternType x (fill-pattern (:fill-pattern options))]
-        (.setFillPattern ^XSSFCellStyle cell-style x)
-        (throw (IllegalArgumentException. (format "Invalid fill-pattern: %s" (:fill-pattern options))))))
+      (.setFillPattern ^XSSFCellStyle cell-style
+                       ^FillPatternType (->enum FillPatternType fill-pattern "fill-pattern" (:fill-pattern options))))
     (if (and foreground-color xssf?)
       (.setFillForegroundColor ^XSSFCellStyle cell-style ^XSSFColor foreground-color))
     (if (and background-color xssf?)
       (.setFillBackgroundColor ^XSSFCellStyle cell-style ^XSSFColor background-color))
     (if border-bottom
-      (.setBorderBottom cell-style (border border-bottom)))
+      (.setBorderBottom cell-style ^BorderStyle (->enum BorderStyle border "border-bottom" border-bottom)))
     (if border-left
-      (.setBorderLeft cell-style (border border-left)))
+      (.setBorderLeft cell-style ^BorderStyle (->enum BorderStyle border "border-left" border-left)))
     (if border-right
-      (.setBorderRight cell-style (border border-right)))
+      (.setBorderRight cell-style ^BorderStyle (->enum BorderStyle border "border-right" border-right)))
     (if border-top
-      (.setBorderTop cell-style (border border-top)))
+      (.setBorderTop cell-style ^BorderStyle (->enum BorderStyle border "border-top" border-top)))
     (if (:data-format options)
       (.setDataFormat cell-style (data-format wb (:data-format options))))
     (if wrap

@@ -1,3 +1,8 @@
+## Unreleased
+
+- Fix writing `org.joda.time.DateTime` values with `loiste.joda-time`:
+  the `CellWrite` implementation had the wrong arity and threw `ArityException`.
+
 ## 1.1.5 (2025-01-15)
 
 - Updated org.apache.poi/poi-ooxml to version 5.4.0

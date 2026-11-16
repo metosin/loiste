@@ -147,19 +147,19 @@
 
 (extend-protocol CellWrite
   java.lang.String
-  (-write [value ^Cell cell options]
+  (-write [value ^Cell cell _options]
     (.setCellValue cell value))
   java.lang.Number
-  (-write [value ^Cell cell options]
+  (-write [value ^Cell cell _options]
     (.setCellValue cell (double value)))
   java.lang.Boolean
-  (-write [value ^Cell cell options]
+  (-write [value ^Cell cell _options]
     (.setCellValue cell value))
   java.util.Date
-  (-write [value ^Cell cell options]
+  (-write [value ^Cell cell _options]
     (.setCellValue cell value))
   clojure.lang.Named
-  (-write [value ^Cell cell options]
+  (-write [value ^Cell cell _options]
     (.setCellValue cell (name value)))
   clojure.lang.IPersistentMap
   (-write [value ^Cell cell options]
@@ -167,7 +167,7 @@
       (.setCellStyle cell (get-in options [:styles (:style value)])))
     (-write (:value value) cell options))
   nil
-  (-write [value ^Cell cell options]
+  (-write [_value ^Cell cell _options]
     (.setBlank cell)))
 
 (defn write-cell! [^Cell cell {:keys [style] :as options} value]

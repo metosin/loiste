@@ -3,7 +3,8 @@
             [loiste.core :as l]
             [clojure.java.io :as io])
   (:import [java.io File]
-           [java.util TimeZone]))
+           [java.util TimeZone]
+           [org.apache.poi.ss.usermodel BorderStyle FillPatternType]))
 
 (def test-spec
   [[:A]
@@ -117,3 +118,39 @@
 (deftest color-test
   (is (= (unchecked-byte 200)
          (aget (.getRGB (l/color 200 200 200)) 0))))
+
+(deftest cell-style-border-and-fill-test
+  (with-open [wb (l/workbook)]
+    (testing "existing keywords keep working"
+      (let [style (l/cell-style wb {:border-bottom :thick
+                                    :border-top :thin
+                                    :fill-pattern :solid})]
+        (is (= BorderStyle/THICK (.getBorderBottom style)))
+        (is (= BorderStyle/THIN (.getBorderTop style)))
+        (is (= FillPatternType/SOLID_FOREGROUND (.getFillPattern style)))))
+
+    (testing "all enum values are available as kebab-case keywords"
+      (let [style (l/cell-style wb {:border-bottom :medium-dashed
+                                    :border-left :double
+                                    :border-right :dash-dot-dot
+                                    :border-top :hair
+                                    :fill-pattern :fine-dots})]
+        (is (= BorderStyle/MEDIUM_DASHED (.getBorderBottom style)))
+        (is (= BorderStyle/DOUBLE (.getBorderLeft style)))
+        (is (= BorderStyle/DASH_DOT_DOT (.getBorderRight style)))
+        (is (= BorderStyle/HAIR (.getBorderTop style)))
+        (is (= FillPatternType/FINE_DOTS (.getFillPattern style))))
+      (is (= (count (BorderStyle/values)) (count l/border)))
+      (is (= (inc (count (FillPatternType/values))) (count l/fill-pattern))))
+
+    (testing "enum values can be given directly"
+      (let [style (l/cell-style wb {:border-bottom BorderStyle/DOTTED
+                                    :fill-pattern FillPatternType/BRICKS})]
+        (is (= BorderStyle/DOTTED (.getBorderBottom style)))
+        (is (= FillPatternType/BRICKS (.getFillPattern style)))))
+
+    (testing "invalid values throw"
+      (is (thrown-with-msg? IllegalArgumentException #"Invalid border-bottom: :foo"
+                            (l/cell-style wb {:border-bottom :foo})))
+      (is (thrown-with-msg? IllegalArgumentException #"Invalid fill-pattern: :foo"
+                            (l/cell-style wb {:fill-pattern :foo}))))))

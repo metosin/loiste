@@ -5,5 +5,5 @@
 
 (extend-protocol loiste/CellWrite
   org.joda.time.DateTime
-  (-write [^DateTime value ^Cell cell]
+  (-write [^DateTime value ^Cell cell _options]
     (.setCellValue cell (.toDate value))))

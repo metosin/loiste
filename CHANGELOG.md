@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Fix writing `org.joda.time.DateTime` values with `loiste.joda-time`:
+  the `CellWrite` implementation had the wrong arity and threw `ArityException`.
 - Support all `BorderStyle` and `FillPatternType` values in cell styles ([#9](https://github.com/metosin/loiste/issues/9))
     - Every enum value is available as a kebab-case keyword, e.g. `:medium-dashed`, `:double`, `:fine-dots`
       (`:solid` still means `SOLID_FOREGROUND`)

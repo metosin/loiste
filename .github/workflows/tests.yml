@@ -4,35 +4,53 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   build-clj:
     strategy:
+      fail-fast: false
       matrix:
-        # Supported Java versions: LTS releases 8 and 11 and the latest release
-        jdk: [8, 11, 17, 21]
+        # Supported Java versions: LTS releases
+        jdk: [8, 11, 17, 21, 25]
 
     name: Clojure (Java ${{ matrix.jdk }})
 
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     - name: Cache dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v6
       with:
         path: ~/.m2/repository
-        key: ${{ runner.os }}-clj-${{ hashFiles('**/project.clj') }}
+        key: ${{ runner.os }}-clj-${{ hashFiles('project.clj') }}
         restore-keys: |
           ${{ runner.os }}-clj-
     - name: Setup Java ${{ matrix.jdk }}
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v6
       with:
         distribution: zulu
         java-version: ${{ matrix.jdk }}
     - name: Setup Clojure
-      uses: DeLaGuardo/setup-clojure@12.1
+      uses: DeLaGuardo/setup-clojure@13.7.0
       with:
-        lein: 2.9.5
+        # 2.13.x tags on the GitHub mirror have a stale bin/lein (2.12.1-SNAPSHOT)
+        lein: 2.12.0
     - name: Run tests
       run: lein test
 
+  lint:
+    name: clj-kondo
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v7
+    - name: Setup clj-kondo
+      uses: DeLaGuardo/setup-clojure@13.7.0
+      with:
+        clj-kondo: 2026.10.26
+    - name: Lint
+      run: clj-kondo --lint src test

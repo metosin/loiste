@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Updated org.apache.poi/poi-ooxml to version 5.5.1
 - Support writing `java.time` values ([#14](https://github.com/metosin/loiste/issues/14))
     - `LocalDate` and `LocalDateTime` are written as is
     - `Instant` and `ZonedDateTime` are written like `java.util.Date`, as wall-clock time in the JVM default time zone

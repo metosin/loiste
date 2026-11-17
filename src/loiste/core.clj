@@ -4,7 +4,7 @@
   (:import [java.time Instant LocalDate LocalDateTime ZonedDateTime]
            [java.util Date Locale]
            [org.apache.poi.ss.usermodel Workbook Sheet Row Cell CellStyle FillPatternType DataFormat CellStyle DateUtil
-            Row$MissingCellPolicy BorderStyle]
+            Row$MissingCellPolicy BorderStyle Font]
            [org.apache.poi.ss.util DateFormatConverter]
            [org.apache.poi.xssf.usermodel XSSFWorkbook XSSFColor XSSFCellStyle DefaultIndexedColorMap]
            [org.apache.poi.xssf.streaming SXSSFWorkbook]))
@@ -184,7 +184,11 @@
   (-write [value ^Cell cell options]
     (if (:style value)
       (.setCellStyle cell (get-in options [:styles (:style value)])))
-    (-write (:value value) cell options))
+    (-write (:value value) cell options)
+    ;; Escape hatch for anything Loiste doesn't support, e.g. rich text or formulas.
+    ;; Called with the write-rows! options, which include the created :styles.
+    (when-let [interop (:interop value)]
+      (interop cell options)))
   nil
   (-write [_value ^Cell cell _options]
     (.setBlank cell)))
@@ -202,11 +206,17 @@
          data
          (concat (:columns options) (repeat nil)))))
 
-(defn font [^Workbook wb {:keys [color name bold]}]
+(defn font
+  "Creates a new Font in the workbook.
+
+  :interop is an optional function called with the Font, to set
+  properties Loiste doesn't support directly."
+  [^Workbook wb {:keys [color name bold interop]}]
   (doto (.createFont wb)
     (cond-> color (.setColor color))
     (cond-> name (.setFontName name))
-    (cond-> bold (.setBold bold))))
+    (cond-> bold (.setBold bold))
+    (cond-> interop interop)))
 
 (defn color [r g b]
   (XSSFColor. (byte-array 3 [(unchecked-byte r)
@@ -247,15 +257,25 @@
     (contains? lookup v) (get lookup v)
     :else (throw (IllegalArgumentException. (format "Invalid %s: %s" option-name v)))))
 
-(defn cell-style [^Workbook wb
-                  {:keys [background-color foreground-color
-                          border-bottom border-left border-right border-top
-                          wrap]
-                   :as options}]
+(defn cell-style
+  "Creates a new CellStyle in the workbook.
+
+  :font can be a font options map (see `font`) or a Font instance.
+
+  :interop is an optional function called with the CellStyle, to set
+  properties Loiste doesn't support directly."
+  [^Workbook wb
+   {:keys [background-color foreground-color
+           border-bottom border-left border-right border-top
+           wrap interop]
+    :as options}]
   (let [^CellStyle cell-style (.createCellStyle wb)
-        xssf? (or (instance? XSSFWorkbook wb) (instance? SXSSFWorkbook wb))]
-    (if (:font options)
-      (.setFont cell-style (font wb (:font options))))
+        xssf? (or (instance? XSSFWorkbook wb) (instance? SXSSFWorkbook wb))
+        font-opt (:font options)]
+    (if font-opt
+      (.setFont cell-style (if (instance? Font font-opt)
+                             font-opt
+                             (font wb font-opt))))
     (if (and (:fill-pattern options) xssf?)
       (.setFillPattern ^XSSFCellStyle cell-style
                        ^FillPatternType (->enum FillPatternType fill-pattern "fill-pattern" (:fill-pattern options))))
@@ -275,6 +295,8 @@
       (.setDataFormat cell-style (data-format wb (:data-format options))))
     (if wrap
       (.setWrapText cell-style true))
+    (if interop
+      (interop cell-style))
     cell-style))
 
 (defn write-row! [^Sheet sheet options row-num data]
@@ -284,13 +306,39 @@
         (do
           (if (:height data)
             (.setHeightInPoints row (:height data)))
-          (write-cells! row options (:values data)))
+          (write-cells! row options (:values data))
+          (when-let [interop (:interop data)]
+            (interop row options)))
         (write-cells! row options data)))))
 
-(defn write-rows! [^Workbook wb ^Sheet sheet options rows]
+(defn write-rows!
+  "Writes rows to the sheet.
+
+  Options:
+  - :styles   map of style name to style options (see `cell-style`)
+              or CellStyle instance.
+  - :columns  vector of column options, :width and :style.
+
+  Rows are vectors of cell values, or maps with :values and optional
+  :height and :interop. Cell values can be maps with :value and optional
+  :style and :interop.
+
+  Row and cell :interop functions are called with the Row or Cell, after the
+  values have been written, and the options map, which contains :workbook,
+  :sheet and the created :styles.
+
+  Workbook level objects, e.g. Fonts or CellStyles, shouldn't be created in
+  :interop functions, as they would be created for each cell. Create them
+  before calling write-rows! and close over them, or use named :styles."
+  [^Workbook wb ^Sheet sheet options rows]
   (let [styles (into {} (for [[k v] (:styles options)]
-                          [k (cell-style wb v)]))
-        options (assoc options :styles styles)]
+                          [k (if (instance? CellStyle v)
+                               v
+                               (cell-style wb v))]))
+        options (assoc options
+                       :workbook wb
+                       :sheet sheet
+                       :styles styles)]
     (doseq [[i {:keys [width style]}] (map-indexed vector (:columns options))]
       (if width
         (.setColumnWidth sheet i width))

@@ -5,7 +5,9 @@
   (:import [java.io File]
            [java.time Instant LocalDate LocalDateTime ZonedDateTime ZoneId]
            [java.util Date TimeZone]
-           [org.apache.poi.ss.usermodel BorderStyle FillPatternType]))
+           [org.apache.poi.ss.usermodel BorderStyle Cell CellStyle FillPatternType Font HorizontalAlignment IndexedColors Row]
+           [org.apache.poi.xssf.streaming SXSSFWorkbook]
+           [org.apache.poi.xssf.usermodel XSSFRichTextString]))
 
 (def test-spec
   [[:A]
@@ -185,3 +187,66 @@
                             (l/cell-style wb {:border-bottom :foo})))
       (is (thrown-with-msg? IllegalArgumentException #"Invalid fill-pattern: :foo"
                             (l/cell-style wb {:fill-pattern :foo}))))))
+
+(deftest interop-test
+  (doseq [wb* [(l/workbook) (l/streaming-workbook)]]
+    (with-open [wb wb*]
+      (let [sheet (l/sheet wb)
+            fonts-before (.getNumberOfFonts wb)
+            ;; Workbook level objects are created once and closed over
+            red (l/font wb {:color (.getIndex IndexedColors/RED)})
+            green (l/font wb {:color (.getIndex IndexedColors/GREEN)})
+            header-font (l/font wb {:bold true
+                                    :interop (fn [^Font font] (.setItalic font true))})
+            right-aligned (doto (.createCellStyle wb)
+                            (.setAlignment HorizontalAlignment/RIGHT))
+            rich-text (fn [^Cell cell _]
+                        (.setCellValue cell (doto (XSSFRichTextString.)
+                                              (.append "foo" red)
+                                              (.append "bar" green))))]
+        (l/write-rows!
+          wb sheet
+          {:styles {:header {:font header-font}
+                    :right right-aligned
+                    :wrap {:interop (fn [^CellStyle style] (.setWrapText style true))}}}
+          [[{:style :header :value "A"} {:style :right :value "B"} "C"]
+           {:interop (fn [^Row row {:keys [workbook sheet styles]}]
+                       (is (identical? wb workbook))
+                       (is (some? sheet))
+                       (is (identical? right-aligned (:right styles)))
+                       (.setHeightInPoints row 40))
+            :values [{:interop rich-text}
+                     {:style :wrap :interop rich-text}
+                     {:value 1}]}
+           [{:interop rich-text}
+            {:interop (fn [^Cell cell {:keys [styles]}]
+                        (.setCellStyle cell (:right styles)))
+             :value "x"}
+            {:interop (fn [^Cell cell _] (.setCellFormula cell "C2+1"))}]])
+
+        (testing "fonts are only created up front, not for each cell"
+          (is (= (+ fonts-before 3) (.getNumberOfFonts wb))))
+
+        (testing "style :font accepts Font instance, font :interop is called"
+          (let [font (.getFontAt wb (.getFontIndex (.getCellStyle (.getCell (.getRow sheet 0) 0))))]
+            (is (.getBold font))
+            (is (.getItalic font))))
+
+        (testing ":styles accepts CellStyle instance"
+          (is (= HorizontalAlignment/RIGHT (.getAlignment (.getCellStyle (.getCell (.getRow sheet 0) 1))))))
+
+        (testing "style :interop is called"
+          (is (.getWrapText (.getCellStyle (.getCell (.getRow sheet 1) 1)))))
+
+        (testing "row :interop is called"
+          (is (= 40.0 (double (.getHeightInPoints (.getRow sheet 1))))))
+
+        (testing "cell :interop is called after value is written"
+          (is (= "foobar" (.getStringCellValue (.getCell (.getRow sheet 2) 0))))
+          (is (= "x" (.getStringCellValue (.getCell (.getRow sheet 2) 1))))
+          (is (= HorizontalAlignment/RIGHT (.getAlignment (.getCellStyle (.getCell (.getRow sheet 2) 1)))))
+          (is (= "C2+1" (.getCellFormula (.getCell (.getRow sheet 2) 2)))))
+
+        ;; Streaming workbook logs a warning if closed without being written or disposed
+        (when (instance? SXSSFWorkbook wb)
+          (.dispose ^SXSSFWorkbook wb))))))

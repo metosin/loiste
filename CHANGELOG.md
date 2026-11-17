@@ -12,6 +12,12 @@
       (`:solid` still means `SOLID_FOREGROUND`)
     - Enum values can also be passed directly, e.g. `:border-bottom BorderStyle/DOTTED`
     - Invalid border values now throw `IllegalArgumentException`, like invalid fill patterns already did
+- Allow direct POI calls for things Loiste doesn't support ([#11](https://github.com/metosin/loiste/issues/11))
+    - Cell and row maps take an `:interop` function, called with the `Cell` or `Row` and the options map,
+      after the values have been written. The options map contains `:workbook`, `:sheet` and the created `:styles`
+    - Style and font options take an `:interop` function, called with the `CellStyle` or `Font`
+    - Style `:font` accepts a `Font` instance and `write-rows!` `:styles` values accept `CellStyle` instances,
+      so fonts and styles can be created once and shared, e.g. between styles and rich text written in `:interop`
 
 ## 1.1.5 (2025-01-15)
 

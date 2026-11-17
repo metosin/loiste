@@ -1,7 +1,8 @@
 (ns loiste.core
   (:require [clojure.java.io :as io]
             [clojure.string :as s])
-  (:import [java.util Locale]
+  (:import [java.time Instant LocalDate LocalDateTime ZonedDateTime]
+           [java.util Date Locale]
            [org.apache.poi.ss.usermodel Workbook Sheet Row Cell CellStyle FillPatternType DataFormat CellStyle DateUtil
             Row$MissingCellPolicy BorderStyle]
            [org.apache.poi.ss.util DateFormatConverter]
@@ -145,6 +146,12 @@
 (defprotocol CellWrite
   (-write [value cell options]))
 
+;; Excel date cells have no time zone, they store wall-clock time.
+;; Date, Instant and ZonedDateTime are written as wall-clock time in the JVM
+;; default time zone (POI converts java.util.Date using the default time zone).
+;; LocalDate and LocalDateTime are written as is.
+;; Like other values, dates need a date data-format style to show as dates.
+
 (extend-protocol CellWrite
   java.lang.String
   (-write [value ^Cell cell _options]
@@ -158,6 +165,18 @@
   java.util.Date
   (-write [value ^Cell cell _options]
     (.setCellValue cell value))
+  LocalDate
+  (-write [value ^Cell cell _options]
+    (.setCellValue cell value))
+  LocalDateTime
+  (-write [value ^Cell cell _options]
+    (.setCellValue cell value))
+  Instant
+  (-write [value ^Cell cell _options]
+    (.setCellValue cell (Date/from value)))
+  ZonedDateTime
+  (-write [value ^Cell cell _options]
+    (.setCellValue cell (Date/from (.toInstant value))))
   clojure.lang.Named
   (-write [value ^Cell cell _options]
     (.setCellValue cell (name value)))

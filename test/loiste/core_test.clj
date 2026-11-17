@@ -3,7 +3,8 @@
             [loiste.core :as l]
             [clojure.java.io :as io])
   (:import [java.io File]
-           [java.util TimeZone]
+           [java.time Instant LocalDate LocalDateTime ZonedDateTime ZoneId]
+           [java.util Date TimeZone]
            [org.apache.poi.ss.usermodel BorderStyle FillPatternType]))
 
 (def test-spec
@@ -112,6 +113,36 @@
                   {:Stuff "Integer" :Date #inst "1900-01-02T22:20:11.000-00:00" :Money 10000.0}
                   {:Stuff "Keyword" :Date "foo" :Money nil}]
                  (l/read-sheet read-sheet)))))
+      (finally
+        (TimeZone/setDefault old-tz)))))
+
+;; See CellWrite: java.time values without a zone are written as is,
+;; Instant and ZonedDateTime are written like java.util.Date, i.e. as
+;; wall-clock time in the JVM default time zone.
+(deftest write-java-time-test
+  (let [old-tz (TimeZone/getDefault)]
+    (try
+      (TimeZone/setDefault (TimeZone/getTimeZone "Europe/Helsinki"))
+      (with-open [wb (l/workbook)]
+        (let [sheet (l/sheet wb)
+              instant (Instant/parse "2016-03-09T14:05:00Z")]
+          (l/write-rows! wb sheet
+                         {:styles {:date {:data-format {:type :date :pattern "dd.MM.yyyy HH.mm" :locale "en"}}}}
+                         [["LocalDate" "LocalDateTime" "Instant" "ZonedDateTime"]
+                          [{:style :date :value (LocalDate/of 2016 3 9)}
+                           {:style :date :value (LocalDateTime/of 2016 3 9 14 5)}
+                           {:style :date :value instant}
+                           {:style :date :value (ZonedDateTime/of 2016 3 9 14 5 0 0 (ZoneId/of "UTC"))}]])
+          (testing "values are written as date cells"
+            (is (= [(LocalDateTime/of 2016 3 9 0 0)
+                    (LocalDateTime/of 2016 3 9 14 5)
+                    (LocalDateTime/of 2016 3 9 16 5)
+                    (LocalDateTime/of 2016 3 9 16 5)]
+                   (map #(.getLocalDateTimeCellValue %) (l/cells (.getRow sheet 1))))))
+          (testing "Instant and ZonedDateTime read back as the same point in time"
+            (is (= {:Instant (Date/from instant)
+                    :ZonedDateTime (Date/from instant)}
+                   (select-keys (first (l/read-sheet sheet)) [:Instant :ZonedDateTime]))))))
       (finally
         (TimeZone/setDefault old-tz)))))
 

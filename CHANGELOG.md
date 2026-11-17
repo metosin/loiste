@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Support writing `java.time` values ([#14](https://github.com/metosin/loiste/issues/14))
+    - `LocalDate` and `LocalDateTime` are written as is
+    - `Instant` and `ZonedDateTime` are written like `java.util.Date`, as wall-clock time in the JVM default time zone
+    - Like `java.util.Date`, use a style with a date `:data-format` to show the cell as a date
 - Fix writing `org.joda.time.DateTime` values with `loiste.joda-time`:
   the `CellWrite` implementation had the wrong arity and threw `ArityException`.
 - Support all `BorderStyle` and `FillPatternType` values in cell styles ([#9](https://github.com/metosin/loiste/issues/9))

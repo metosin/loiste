@@ -196,12 +196,20 @@
 (defn write-cell! [^Cell cell {:keys [style] :as options} value]
   (if style
     (.setCellStyle cell (get-in options [:styles style])))
-  (-write value cell options))
+  ;; :style is the default style for this cell, not part of the options
+  ;; passed on to cell values and :interop functions.
+  (-write value cell (cond-> options style (dissoc :style))))
 
 (defn write-cells! [^Row row options data]
   (doall
     (map (fn [col-num data column-options]
-           (write-cell! (.createCell row col-num) (merge options column-options) data))
+           ;; Only the column :style applies to the cell, other column options
+           ;; (e.g. :width) aren't passed on to cell values and :interop functions.
+           (write-cell! (.createCell row col-num)
+                        (if-let [style (:style column-options)]
+                          (assoc options :style style)
+                          options)
+                        data))
          (range)
          data
          (concat (:columns options) (repeat nil)))))
@@ -212,11 +220,13 @@
   :interop is an optional function called with the Font, to set
   properties Loiste doesn't support directly."
   [^Workbook wb {:keys [color name bold interop]}]
-  (doto (.createFont wb)
-    (cond-> color (.setColor color))
-    (cond-> name (.setFontName name))
-    (cond-> bold (.setBold bold))
-    (cond-> interop interop)))
+  (let [font (doto (.createFont wb)
+               (cond-> color (.setColor color))
+               (cond-> name (.setFontName name))
+               (cond-> bold (.setBold bold)))]
+    (when interop
+      (interop font))
+    font))
 
 (defn color [r g b]
   (XSSFColor. (byte-array 3 [(unchecked-byte r)
@@ -257,10 +267,28 @@
     (contains? lookup v) (get lookup v)
     :else (throw (IllegalArgumentException. (format "Invalid %s: %s" option-name v)))))
 
+(defn- check-belongs-to-workbook!
+  "Throws if obj, e.g. a Font or CellStyle passed in by the user, was created
+  in another workbook. POI uses the index to refer to the object, so a
+  foreign object would silently refer to whatever has the same index in wb."
+  [what obj idx n get-at]
+  (when-not (and (< -1 idx n) (= obj (get-at idx)))
+    (throw (IllegalArgumentException. (format "%s doesn't belong to the workbook" what))))
+  obj)
+
+(defn- check-font! [^Workbook wb ^Font f]
+  (check-belongs-to-workbook! "Font" f (.getIndexAsInt f) (.getNumberOfFontsAsInt wb)
+                              #(.getFontAt wb (int %))))
+
+(defn- check-cell-style! [^Workbook wb ^CellStyle style]
+  (check-belongs-to-workbook! "CellStyle" style (int (.getIndex style)) (.getNumCellStyles wb)
+                              #(.getCellStyleAt wb (int %))))
+
 (defn cell-style
   "Creates a new CellStyle in the workbook.
 
-  :font can be a font options map (see `font`) or a Font instance.
+  :font can be a font options map (see `font`) or a Font instance
+  created in the same workbook.
 
   :interop is an optional function called with the CellStyle, to set
   properties Loiste doesn't support directly."
@@ -274,7 +302,7 @@
         font-opt (:font options)]
     (if font-opt
       (.setFont cell-style (if (instance? Font font-opt)
-                             font-opt
+                             (check-font! wb font-opt)
                              (font wb font-opt))))
     (if (and (:fill-pattern options) xssf?)
       (.setFillPattern ^XSSFCellStyle cell-style
@@ -306,9 +334,10 @@
         (do
           (if (:height data)
             (.setHeightInPoints row (:height data)))
-          (write-cells! row options (:values data))
-          (when-let [interop (:interop data)]
-            (interop row options)))
+          (let [result (write-cells! row options (:values data))]
+            (when-let [interop (:interop data)]
+              (interop row options))
+            result))
         (write-cells! row options data)))))
 
 (defn write-rows!
@@ -316,7 +345,7 @@
 
   Options:
   - :styles   map of style name to style options (see `cell-style`)
-              or CellStyle instance.
+              or CellStyle instance created in the same workbook.
   - :columns  vector of column options, :width and :style.
 
   Rows are vectors of cell values, or maps with :values and optional
@@ -325,7 +354,11 @@
 
   Row and cell :interop functions are called with the Row or Cell, after the
   values have been written, and the options map, which contains :workbook,
-  :sheet and the created :styles.
+  :sheet and the created :styles. Their return value is ignored.
+
+  Note: streaming workbooks write strings inline by default, which drops
+  rich text formatting. To write rich text in :interop functions with a
+  streaming workbook, create it with :shared-strings-table? true.
 
   Workbook level objects, e.g. Fonts or CellStyles, shouldn't be created in
   :interop functions, as they would be created for each cell. Create them
@@ -333,7 +366,7 @@
   [^Workbook wb ^Sheet sheet options rows]
   (let [styles (into {} (for [[k v] (:styles options)]
                           [k (if (instance? CellStyle v)
-                               v
+                               (check-cell-style! wb v)
                                (cell-style wb v))]))
         options (assoc options
                        :workbook wb

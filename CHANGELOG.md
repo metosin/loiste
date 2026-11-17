@@ -17,7 +17,10 @@
       after the values have been written. The options map contains `:workbook`, `:sheet` and the created `:styles`
     - Style and font options take an `:interop` function, called with the `CellStyle` or `Font`
     - Style `:font` accepts a `Font` instance and `write-rows!` `:styles` values accept `CellStyle` instances,
-      so fonts and styles can be created once and shared, e.g. between styles and rich text written in `:interop`
+      so fonts and styles can be created once and shared, e.g. between styles and rich text written in `:interop`.
+      Instances created in another workbook throw `IllegalArgumentException`
+    - Streaming workbooks write strings inline by default, which drops rich text formatting.
+      Use `(l/streaming-workbook (l/workbook) {:shared-strings-table? true})` to write rich text.
 
 ## 1.1.5 (2025-01-15)
 

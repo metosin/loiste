@@ -1,12 +1,9 @@
-## Unreleased
+## 1.2.0 (2026-11-19)
 
-- Updated org.apache.poi/poi-ooxml to version 5.5.1
 - Support writing `java.time` values ([#14](https://github.com/metosin/loiste/issues/14))
     - `LocalDate` and `LocalDateTime` are written as is
     - `Instant` and `ZonedDateTime` are written like `java.util.Date`, as wall-clock time in the JVM default time zone
     - Like `java.util.Date`, use a style with a date `:data-format` to show the cell as a date
-- Fix writing `org.joda.time.DateTime` values with `loiste.joda-time`:
-  the `CellWrite` implementation had the wrong arity and threw `ArityException`.
 - Support all `BorderStyle` and `FillPatternType` values in cell styles ([#9](https://github.com/metosin/loiste/issues/9))
     - Every enum value is available as a kebab-case keyword, e.g. `:medium-dashed`, `:double`, `:fine-dots`
       (`:solid` still means `SOLID_FOREGROUND`)
@@ -21,6 +18,9 @@
       Instances created in another workbook throw `IllegalArgumentException`
     - Streaming workbooks write strings inline by default, which drops rich text formatting.
       Use `(l/streaming-workbook (l/workbook) {:shared-strings-table? true})` to write rich text.
+- Fix writing `org.joda.time.DateTime` values with `loiste.joda-time`:
+  the `CellWrite` implementation had the wrong arity and threw `ArityException`.
+- Updated org.apache.poi/poi-ooxml to version 5.5.1
 
 ## 1.1.5 (2025-01-15)
 

@@ -5,7 +5,9 @@
   (:import [java.io File]
            [java.time Instant LocalDate LocalDateTime ZonedDateTime ZoneId]
            [java.util Date TimeZone]
-           [org.apache.poi.ss.usermodel BorderStyle FillPatternType]))
+           [org.apache.poi.ss.usermodel BorderStyle Cell CellStyle FillPatternType Font HorizontalAlignment IndexedColors Row]
+           [org.apache.poi.xssf.streaming SXSSFWorkbook]
+           [org.apache.poi.xssf.usermodel XSSFRichTextString]))
 
 (def test-spec
   [[:A]
@@ -185,3 +187,100 @@
                             (l/cell-style wb {:border-bottom :foo})))
       (is (thrown-with-msg? IllegalArgumentException #"Invalid fill-pattern: :foo"
                             (l/cell-style wb {:fill-pattern :foo}))))))
+
+(deftest interop-test
+  (doseq [[wb-name new-wb] [["workbook" l/workbook]
+                            ;; Rich text needs the shared strings table, inline strings drop formatting
+                            ["streaming workbook" #(l/streaming-workbook (l/workbook) {:shared-strings-table? true})]]]
+    (testing wb-name
+      (with-open [wb (new-wb)]
+        (let [sheet (l/sheet wb)
+              file (File/createTempFile "interop-test" ".xlsx")
+              fonts-before (.getNumberOfFonts wb)
+              ;; Workbook level objects are created once and closed over
+              red (l/font wb {:color (.getIndex IndexedColors/RED)})
+              green (l/font wb {:color (.getIndex IndexedColors/GREEN)})
+              header-font (l/font wb {:bold true
+                                      :interop (fn [^Font font] (.setItalic font true))})
+              right-aligned (doto (.createCellStyle wb)
+                              (.setAlignment HorizontalAlignment/RIGHT))
+              rich-text (fn [^Cell cell _]
+                          (.setCellValue cell (doto (XSSFRichTextString.)
+                                                (.append "foo" red)
+                                                (.append "bar" green))))
+              cell-options (atom nil)]
+          (l/write-rows!
+            wb sheet
+            {:styles {:header {:font header-font}
+                      :right right-aligned
+                      :wrap {:interop (fn [^CellStyle style] (.setWrapText style true))}}
+             :columns [{:width 1000 :style :header}]}
+            [[{:style :header :value "A"} {:style :right :value "B"} "C"]
+             {:interop (fn [^Row row {:keys [workbook styles] opt-sheet :sheet}]
+                         (is (identical? wb workbook))
+                         (is (identical? sheet opt-sheet))
+                         (is (identical? right-aligned (:right styles)))
+                         (.setHeightInPoints row 40))
+              :values [{:interop (fn [cell options]
+                                   (reset! cell-options options)
+                                   (rich-text cell options))}
+                       {:style :wrap :interop rich-text}
+                       {:value 1}]}
+             [{:interop rich-text}
+              {:interop (fn [^Cell cell {:keys [styles]}]
+                          (.setCellStyle cell (:right styles)))
+               :value "x"}
+              {:interop (fn [^Cell cell _] (.setCellFormula cell "C2+1"))}]])
+
+          (testing "fonts are only created up front, not for each cell"
+            (is (= (+ fonts-before 3) (.getNumberOfFonts wb))))
+
+          (testing "cell :interop options don't include column options"
+            (is (not (contains? @cell-options :style)))
+            (is (not (contains? @cell-options :width)))
+            (is (= #{:header :right :wrap} (set (keys (:styles @cell-options))))))
+
+          (l/to-file! file wb)
+
+          (with-open [wb (l/workbook file)]
+            (let [sheet (l/sheet wb 0)
+                  cell (fn [r c] (.getCell (.getRow sheet r) c))]
+              (testing "style :font accepts Font instance, font :interop is called"
+                (let [font (.getFontAt wb (.getFontIndex (.getCellStyle (cell 0 0))))]
+                  (is (.getBold font))
+                  (is (.getItalic font))))
+
+              (testing ":styles accepts CellStyle instance"
+                (is (= HorizontalAlignment/RIGHT (.getAlignment (.getCellStyle (cell 0 1))))))
+
+              (testing "style :interop is called"
+                (is (.getWrapText (.getCellStyle (cell 1 1)))))
+
+              (testing "row :interop is called"
+                (is (= 40.0 (double (.getHeightInPoints (.getRow sheet 1))))))
+
+              (testing "cell :interop is called after value is written"
+                (let [rt (.getRichStringCellValue (cell 2 0))]
+                  (is (= "foobar" (.getString rt)))
+                  (is (= 2 (.numFormattingRuns rt)))
+                  (is (= (.getIndex IndexedColors/RED) (.getColor (.getFontAtIndex rt 0))))
+                  (is (= (.getIndex IndexedColors/GREEN) (.getColor (.getFontAtIndex rt 3)))))
+                (is (= "x" (.getStringCellValue (cell 2 1))))
+                (is (= HorizontalAlignment/RIGHT (.getAlignment (.getCellStyle (cell 2 1)))))
+                (is (= "C2+1" (.getCellFormula (cell 2 2)))))))
+
+          ;; Streaming workbook keeps temp files until disposed
+          (when (instance? SXSSFWorkbook wb)
+            (.dispose ^SXSSFWorkbook wb))
+          (.delete file))))))
+
+(deftest interop-foreign-workbook-test
+  (with-open [wb (l/workbook)
+              other (l/workbook)]
+    (let [other-font (l/font other {:bold true})
+          other-style (do (dotimes [_ 3] (.createCellStyle other))
+                          (l/cell-style other {:font other-font}))]
+      (is (thrown-with-msg? IllegalArgumentException #"Font doesn't belong to the workbook"
+                            (l/cell-style wb {:font other-font})))
+      (is (thrown-with-msg? IllegalArgumentException #"CellStyle doesn't belong to the workbook"
+                            (l/write-rows! wb (l/sheet wb) {:styles {:other other-style}} []))))))

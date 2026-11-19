@@ -12,8 +12,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Supported Java versions: LTS releases
-        jdk: [8, 11, 17, 21, 25]
+        # Supported Java versions: LTS releases (POI 6 requires 17+)
+        jdk: [17, 21, 25]
 
     name: Clojure (Java ${{ matrix.jdk }})
 

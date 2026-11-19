@@ -277,7 +277,7 @@
   obj)
 
 (defn- check-font! [^Workbook wb ^Font f]
-  (check-belongs-to-workbook! "Font" f (.getIndexAsInt f) (.getNumberOfFontsAsInt wb)
+  (check-belongs-to-workbook! "Font" f (.getIndex f) (.getNumberOfFonts wb)
                               #(.getFontAt wb (int %))))
 
 (defn- check-cell-style! [^Workbook wb ^CellStyle style]

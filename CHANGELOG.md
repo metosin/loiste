@@ -1,3 +1,8 @@
+## Unreleased
+
+- **Breaking:** Requires Java 17 or later (POI 6 is compiled for Java 17)
+- Updated org.apache.poi/poi-ooxml to version 6.0.0
+
 ## 1.2.0 (2026-11-19)
 
 - Support writing `java.time` values ([#14](https://github.com/metosin/loiste/issues/14))

@@ -7,11 +7,11 @@
             :comments "same as Clojure"}
   :dependencies [[org.apache.poi/poi-ooxml "5.5.1"]]
 
-  :profiles {:dev {:dependencies [[org.clojure/clojure "1.12.0"]
-                                  [joda-time "2.13.0"]
+  :profiles {:dev {:dependencies [[org.clojure/clojure "1.12.7"]
+                                  [joda-time "2.15.1"]
 
                                   ;; POI needs log4j implementation
-                                  [org.apache.logging.log4j/log4j-to-slf4j "2.24.3"]
-                                  [ch.qos.logback/logback-classic "1.5.16" :exclusions [org.slf4j/slf4j-api]]
-                                  [org.slf4j/slf4j-api "2.0.16"]]
+                                  [org.apache.logging.log4j/log4j-to-slf4j "2.26.1"]
+                                  [ch.qos.logback/logback-classic "1.6.8" :exclusions [org.slf4j/slf4j-api]]
+                                  [org.slf4j/slf4j-api "2.0.20"]]
                    :resource-paths ["dev-resources"]}})

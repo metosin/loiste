@@ -1,7 +1,14 @@
 ## Unreleased
 
+Loiste 2.0 updates to POI 6. Loiste's own API is unchanged, but the new POI version
+requires Java 17. Stay on Loiste 1.2.x if you need Java 8 or 11.
+
 - **Breaking:** Requires Java 17 or later (POI 6 is compiled for Java 17)
-- Updated org.apache.poi/poi-ooxml to version 6.0.0
+- **Breaking:** Updated org.apache.poi/poi-ooxml to version 6.0.0
+    - Code calling POI directly, e.g. in `:interop` functions, may need changes.
+      POI 6 removes deprecated methods, e.g. `Font.getIndexAsInt` (use `getIndex`, which now returns `int`),
+      and changes some behavior, e.g. `DataFormatter` uses cached values for formula cells by default.
+      See the [POI changelog](https://poi.apache.org/changes.html)
 
 ## 1.2.0 (2026-11-19)
 

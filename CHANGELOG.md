@@ -1,4 +1,4 @@
-## Unreleased
+## 2.0.0 (2026-11-19)
 
 Loiste 2.0 updates to POI 6. Loiste's own API is unchanged, but the new POI version
 requires Java 17. Stay on Loiste 1.2.x if you need Java 8 or 11.
@@ -9,6 +9,8 @@ requires Java 17. Stay on Loiste 1.2.x if you need Java 8 or 11.
       POI 6 removes deprecated methods, e.g. `Font.getIndexAsInt` (use `getIndex`, which now returns `int`),
       and changes some behavior, e.g. `DataFormatter` uses cached values for formula cells by default.
       See the [POI changelog](https://poi.apache.org/changes.html)
+
+**[compare](https://github.com/metosin/loiste/compare/1.2.0...2.0.0)**
 
 ## 1.2.0 (2026-11-19)
 
@@ -34,24 +36,34 @@ requires Java 17. Stay on Loiste 1.2.x if you need Java 8 or 11.
   the `CellWrite` implementation had the wrong arity and threw `ArityException`.
 - Updated org.apache.poi/poi-ooxml to version 5.5.1
 
+**[compare](https://github.com/metosin/loiste/compare/1.1.5...1.2.0)**
+
 ## 1.1.5 (2025-01-15)
 
 - Updated org.apache.poi/poi-ooxml to version 5.4.0
+
+**[compare](https://github.com/metosin/loiste/compare/1.1.4...1.1.5)**
 
 ## 1.1.4 (2023-12-07)
 
 - Updated org.apache.poi/poi-ooxml to version 5.2.5
 - Write `nil` values as BLANK cells, instead of empty string.
 
+**[compare](https://github.com/metosin/loiste/compare/1.1.3...1.1.4)**
+
 ## 1.1.3 (2022-12-19)
 
 - Updated org.apache.poi/poi-ooxml to version 5.2.3
     (fixes a CVE in POI)
 
+**[compare](https://github.com/metosin/loiste/compare/1.1.2...1.1.3)**
+
 ## 1.1.2 (2022-01-25)
 
 - Updated org.apache.poi/poi-ooxml to version 5.2.0
     (fixes a CVE in POI dependencies)
+
+**[compare](https://github.com/metosin/loiste/compare/1.1.1...1.1.2)**
 
 ## 1.1.1 (2021-11-22)
 
@@ -105,3 +117,5 @@ for data map keys
 
 - Support for setting row height
 - Support for setting cell wrap option
+
+**[compare](https://github.com/metosin/loiste/compare/0.0.5...0.0.6)**
